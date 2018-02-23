@@ -34,5 +34,8 @@
     "eslint-config-google": "^0.9.1",
     "mocha": "^5.0.1",
     "nyc": "^11.4.1"
+  },
+  "bin": {
+    "ipfsconsortiumproxy": "start.sh"
   }
 }
