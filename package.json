@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "start" : "./bin.js"
   },
   "repository": {
     "type": "git",
@@ -22,6 +23,7 @@
   },
   "homepage": "https://github.com/ipfsconsortium/IPFSConsortiumProxy#readme",
   "dependencies": {
+    "command-line-tool": "^0.8.0",
     "dotenv": "^5.0.0",
     "ipfs-api": "^18.1.1",
     "ipfsconsortiumcontracts": "git+https://git@github.com/ipfsconsortium/IPFSConsortiumContracts.git",
@@ -36,6 +38,6 @@
     "nyc": "^11.4.1"
   },
   "bin": {
-    "ipfsconsortiumproxy": "start.sh"
+    "ipfsconsortiumproxy": "bin.js"
   }
 }
