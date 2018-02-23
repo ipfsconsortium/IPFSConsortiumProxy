@@ -1,0 +1,38 @@
+{
+  "name": "ipfsconsortiumproxy",
+  "version": "0.0.1",
+  "description": "IPFS consortium deamon scripts wrapped as an npm module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://sponnet@github.com/ipfsconsortium/IPFSConsortiumProxy.git"
+  },
+  "keywords": [
+    "IPFS",
+    "Web3"
+  ],
+  "author": "Stefaan Ponnet",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ipfsconsortium/IPFSConsortiumProxy/issues"
+  },
+  "homepage": "https://github.com/ipfsconsortium/IPFSConsortiumProxy#readme",
+  "dependencies": {
+    "dotenv": "^5.0.0",
+    "ipfs-api": "^18.1.1",
+    "ipfsconsortiumcontracts": "git+https://git@github.com/ipfsconsortium/IPFSConsortiumContracts.git",
+    "level": "^3.0.0",
+    "web3": "^1.0.0-beta.30",
+    "winston": "^2.4.0"
+  },
+  "devDependencies": {
+    "eslint": "^4.18.1",
+    "eslint-config-google": "^0.9.1",
+    "mocha": "^5.0.1",
+    "nyc": "^11.4.1"
+  }
+}
