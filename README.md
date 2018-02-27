@@ -9,7 +9,7 @@ IPFS server according to the Events that flow through the monitored contracts.
 
 ## Configuration
 
-## Option 1 : Environment variables
+### Option 1 : Environment variables
 
 You can set a number of environment variables to configure the script:
 
@@ -22,10 +22,11 @@ STARTBLOCK=4090116
 ```
 
 ### Option 2 : .ENV file
+
 Check / modify the settings in the enclosed .env-dist file
 
 By default the IPFS API is assumed to be on `localhost` port `5001` using the HTTP protocol
-The Ethereum node to connect to is `localhost` port `8546` using the websocket protocol
+The Ethereum node connects through a websocket on `localhost` port `8546`
 
 ### Option 3 : command line parameters
 
