@@ -33,6 +33,8 @@ The Ethereum node to connect to is `localhost` port `8546` using the websocket p
 ipfsconsortiumproxy  --ipfsapihost localhost --ipfsapiport 5001 --web3hostws "ws://localhost:8546" --contractaddress '0x7433c7c768be4025ab791fb7b2942c3d9e309f3e' --startblock 4090116
 ```
 
+Type `ipfsconsortiumproxy -h` for more info about the available parameters.
+
 ## Running
 
 just type `ipfsconsortiumproxy` to start it up.
