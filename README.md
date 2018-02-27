@@ -46,7 +46,7 @@ just type `ipfsconsortiumproxy` to start it up.
 The consortium is managed by a smart contract deployed here 
 
 * Livenet `0x7433c7c768be4025ab791fb7b2942c3d9e309f3e` ( startblock 4090116 )
-* Rinkeby `TODO` ( startblock TODO)
+* Rinkeby `0x3ef882ffcE8fC40f6Ca473f29AC16dE8a60419BB` ( startblock 1846107 )
 
 ## How can I join the consortium ?
 
