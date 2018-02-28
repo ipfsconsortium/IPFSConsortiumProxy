@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint .",
-    "start" : "./bin.js"
+    "start": "./bin.js"
   },
   "repository": {
     "type": "git",
@@ -29,7 +29,7 @@
     "ipfsconsortiumcontracts": "git+https://git@github.com/ipfsconsortium/IPFSConsortiumContracts.git",
     "level": "^3.0.0",
     "web3": "^1.0.0-beta.30",
-    "winston": "^2.4.0"
+    "winston": "^3.0.0-rc1"
   },
   "devDependencies": {
     "eslint": "^4.18.1",

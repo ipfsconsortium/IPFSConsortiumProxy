@@ -3,20 +3,57 @@
 This script watches a consortium proxy contract and pins/unpins IPFS data on your local
 IPFS server according to the Events that flow through the monitored contracts.
 
+# Installation
+
+`npm install ipfsconsortiumproxy`
+
 ## Configuration
 
-Check / modify the settings in the enclosed .env file
-You can override any of these values by setting an ENV value with the same name.
+### Option 1 : Environment variables
+
+You can set a number of environment variables to configure the script:
+
+```
+IPFSAPIHOST=localhost
+IPFSAPIPORT=5001
+WEB3HOSTWS="ws://localhost:8546"
+CONTRACTADDRESS="0x7433c7c768be4025ab791fb7b2942c3d9e309f3e"
+STARTBLOCK=4090116
+```
+
+### Option 2 : .ENV file
+
+Check / modify the settings in the enclosed .env-dist file
 
 By default the IPFS API is assumed to be on `localhost` port `5001` using the HTTP protocol
-The Ethereum node to connect to is `localhost` port `8546` using the websocket protocol
+The Ethereum node connects through a websocket on `localhost` port `8546`
+
+### Option 3 : command line parameters
+
+```
+ipfsconsortiumproxy  --ipfsapihost localhost --ipfsapiport 5001 --web3hostws "ws://localhost:8546" --contractaddress '0x7433c7c768be4025ab791fb7b2942c3d9e309f3e' --startblock 4090116
+```
+
+Type `ipfsconsortiumproxy -h` for more info about the available parameters.
 
 ## Running
 
-`npm install`
-`npm start`
+just type `ipfsconsortiumproxy` to start it up.
 
-## How can I help
+
+## How does the consortium work ?
+
+The consortium is managed by a smart contract deployed here 
+
+* Livenet `0x7433c7c768be4025ab791fb7b2942c3d9e309f3e` ( startblock 4090116 )
+* Rinkeby `0x3ef882ffcE8fC40f6Ca473f29AC16dE8a60419BB` ( startblock 1846107 )
+
+## How can I join the consortium ?
+
+* Go to the IPFSConsortium chat on Riot ( see below ) and ask for access
+* OR: Deploy your own version of the contract, and start your own consortium
+
+## How can I help support the IPFS consortium ?
 
 ### Running an IPFS node
 

@@ -1,189 +1,292 @@
 'use strict';
 
+/**
+ * Bootstrap the consortium code
+ *
+ */
 class IPFSConsortiumProxy {
-	constructor(options) {}
-
-	go() {
-
-		// mixin the environment variables defined in .env
-		require('dotenv').config({
-			path: '.env',
+	/**
+	 * constructor
+	 *
+	 * @param      {object}  options  The options
+	 */
+	constructor(options) {
+		const {
+			createLogger,
+			format,
+			transports,
+		} = require('winston');
+		this.logger = createLogger({
+			level: 'info',
+			format: format.combine(
+				format.colorize(),
+				format.splat(),
+				format.simple()
+			),
+			transports: [new transports.Console()],
 		});
+		this.options = options;
+	}
 
-		let Web3 = require('web3');
-		let ipfsAPI = require('ipfs-api');
+  /**
+   * Bootstrap the consortium code
+   *
+   */
+	go() {
+		const Web3 = require('web3');
+		const ipfsAPI = require('ipfs-api');
 
-		let ipfs = ipfsAPI({
-			host: process.env.IPFSAPIHOST,
-			port: process.env.IPFSAPIPORT,
+		const ipfs = ipfsAPI({
+			host: this.options.IPFSAPIHOST,
+			port: this.options.IPFSAPIPORT,
 			protocol: 'http',
 		});
 
-		let IPFSProxy = require('../node_modules/ipfsconsortiumcontracts/build/contracts/IPFSProxy.json');
-		let IPFSEvents = require('../node_modules/ipfsconsortiumcontracts/build/contracts/IPFSEvents.json');
+		const IPFSProxy = require(
+			'../node_modules/ipfsconsortiumcontracts/build/contracts/IPFSProxy.json');
+		const IPFSEvents = require(
+			'../node_modules/ipfsconsortiumcontracts/build/contracts/IPFSEvents.json');
 
-		let web3 = new Web3(new Web3.providers.WebsocketProvider(process.env.WEB3HOSTWS));
+		const web3 = new Web3(new Web3.providers.WebsocketProvider(this.options.WEB3HOSTWS));
 
-		let contract = new web3.eth.Contract(IPFSProxy.abi, process.env.CONTRACTADDRESS);
+		const contract = new web3.eth.Contract(IPFSProxy.abi, this.options.CONTRACTADDRESS);
 
-		let memberquota = {};
-		let hashvalidity = {};
-		let epochtohash = {};
-		let watchedcontracts = {};
+		let localData = {
+			memberquota: {},
+			hashexpiry: {},
+			epochtohash: {},
+			watchedcontracts: {},
+			lastblock: this.options.STARTBLOCK,
+			sizelimit: new web3.utils.BN(0),
+		};
 
-		contract.methods.sizeLimit().call(function(err, res) {
+		contract.methods.sizeLimit().call((err, res) => {
 			if (err) {
+				this.logger.error('cannot read contract %s %s. Exiting',
+					this.options.CONTRACTADDRESS, err.message);
 				process.exit();
 			}
-			var sizelimit = new web3.utils.BN(res);
-			console.log('sizelimit=', sizelimit.toNumber(10));
+			localData.sizelimit = new web3.utils.BN(res);
+			this.logger.info('sizelimit= %d bytes', localData.sizelimit.toNumber(10));
 
 			contract.events.allEvents({
-				fromBlock: process.env.STARTBLOCK
-			}, function(error, result) {
+				fromBlock: this.options.STARTBLOCK,
+			}, (error, result) => {
 				if (error == null) {
 					switch (result.event) {
 						case 'ContractAdded':
-							console.log('ContractAdded', result.returnValues.pubKey, result.returnValues.ttl);
+							this.logger.info('ContractAdded address=%s, ttl=%s',
+								result.returnValues.pubKey, result.returnValues.ttl);
 							addContract(result.returnValues.pubKey, result.blockNumber);
 							break;
 						case 'MemberAdded':
-							console.log('MemberAdded', result.returnValues.newMember);
-							memberquota[result.returnValues.newMember] = {
-								totalsize: 0
-							};
+							this.logger.info('MemberAdded pubkey=%s',
+								result.returnValues.newMember);
+							addMember(result.returnValues.newMember);
 							break;
 						case 'Banned':
 						case 'BanAttempt':
-							console.log('Event handler not implemented:', result.event);
+							this.logger.warn('Event handler not implemented: %s', result.event);
+							break;
+						case 'PersistLimitChanged':
+							this.logger.info('Changing PersistLimit to %s bytes per member',
+								result.returnValues.limit);
+							localData.sizelimit = new web3.utils.BN(result.returnValues.limit);
+							break;
+						case 'HashAdded':
+						case 'HashRemoved':
+							// the contract listener will catch these, We can ignore these here.
 							break;
 						default:
-							console.log('unknown Event:', result.event);
+							this.logger.warn('unknown Event: %s', result.event);
 							break;
 					}
 				} else {
-					console.log(error, result);
+					this.logger.error('Error: %s', error.message);
 				}
 			});
 		});
 
-		function addContract(contractaddress, startblock) {
-			if (watchedcontracts[contractaddress]) {
-				console.log('already watching address', contractaddress);
+		let cleanAddress = (address) => {
+			return address.toLowerCase();
+		};
+
+		let isMember = (address) => {
+			return (localData.memberquota[cleanAddress(address)] != null);
+		};
+
+		let addMember = (address) => {
+			if (!isMember(address)) {
+				localData.memberquota[cleanAddress(address)] = {
+					used: new web3.utils.BN(0),
+				};
+			}
+		};
+
+		// let getMemberQuota = (address) => {
+		// 	return localData.memberquota[cleanAddress(address)] ?
+		// 		localData.memberquota[cleanAddress(address)].used :
+		// 		new web3.utils.BN(0);
+		// };
+
+		let canAddToQuota = (address, amount) => {
+			return (localData.memberquota[cleanAddress(address)]
+				.used.add(amount).cmp(localData.sizelimit) === -1);
+		};
+
+
+		let addToQuota = (address, amount) => {
+			localData.memberquota[cleanAddress(address)].used =
+				localData.memberquota[cleanAddress(address)].used.add(amount);
+		};
+
+		// let subtractFromQuota = (address, amount) => {
+		// 	localData.memberquota[cleanAddress(address)].used =
+		// 		localData.memberquota[cleanAddress(address)].used.sub(amount);
+		// };
+
+		let addHash = (IPFShash, memberAddress, expiryTimeStamp) => {
+			// TODO : get size of file on this hash
+			ipfs.cat(IPFShash).then((r) => {
+				this.logger.info('hash fetched %d bytes', r.byteLength);
+				let hashByteSize = new web3.utils.BN(r.byteLength);
+				if (canAddToQuota(cleanAddress(memberAddress), hashByteSize)) {
+					this.logger.info('pinning hash %s until %s', IPFShash,
+						new Date(expiryTimeStamp));
+
+					ipfs.pin.add(IPFShash, (err, res) => {
+						if (!err) {
+							this.logger.info('pinning complete... %s', JSON.stringify(res));
+							addexpiration(IPFShash, expiryTimeStamp);
+							addToQuota(cleanAddress(memberAddress), hashByteSize);
+							dumpstate();
+						} else {
+							this.logger.error('Error pinning hash %s', err.message);
+						}
+					});
+				} else {
+					this.logger.error('Pinning hash %s would exceed users %s quota => ignoring',
+						IPFShash, memberAddress);
+				}
+			}).catch((err) => {
+				this.logger.error(err.message);
+			});
+		};
+
+		let addContract = (contractaddress, startblock) => {
+			if (localData.watchedcontracts[cleanAddress(contractaddress)]) {
+				this.logger.info('already watching address %s', contractaddress);
 				return;
 			}
-			//  var contract = web3.eth.contract(config.IPFSEventsAbi).at(contractaddress);
-			let contract = new web3.eth.Contract(IPFSEvents.abi, contractaddress);
 
-			// var eventlistener = contract.allEvents({
-			// 	fromBlock: startblock,
-			// 	toBlock: 'latest'
-			// });
+			const contract = new web3.eth.Contract(IPFSEvents.abi, contractaddress);
 
 			let listener = contract.events.allEvents({
-				fromBlock: startblock
-			}, function(error, result) {
+				fromBlock: startblock,
+			}, (error, result) => {
 				if (error == null) {
 					switch (result.event) {
 						case 'HashAdded':
-							web3.eth.getBlock(result.blockNumber, function(error, blockInfo) {
-								console.log('block timestamp approx=', blockInfo.timestamp);
-
-								var remainingTTL = parseInt(result.returnValues.ttl) + blockInfo.timestamp * 1000;
-								console.log('remaining TTL', remainingTTL);
-
-								if (remainingTTL < 0) {
-									console.log('already expired - not adding to pinned list');
-								} else {
-									// TODO : get size of file on this hash
-									// TODO : totalsize of member
-									// TODO : if totalsize + filesize > memberquota[member] -> ban user
-									// TODO : else, increase totalsize 
-
-									console.log('pinning hash', result.returnValues.hashAdded);
-
-									ipfs.pin.add(result.returnValues.hashAdded, function(err, res) {
-										console.log('pinned...', result.returnValues.hashAdded, err, res);
-										addexpiration(result.returnValues.hashAdded, remainingTTL);
-									});
-								}
-							});
+							if (isMember(result.returnValues.pubKey)) {
+								web3.eth.getBlock(result.blockNumber, (error, blockInfo) => {
+									const expiryTimeStamp =
+										parseInt(result.returnValues.ttl) +
+										blockInfo.timestamp * 1000;
+									if (result.returnValues.pubKey < Date().now) {
+										this.logger.info('already expired, not pinning');
+									} else {
+										addHash(result.returnValues.hashAdded,
+											result.returnValues.pubKey, expiryTimeStamp);
+									}
+								});
+							} else {
+								this.logger.warn('HashAdded %s is not a member of the consortium',
+									result.returnValues.pubKey);
+							}
 							break;
 						case 'HashRemoved':
 							removehash(result.returnValues.hashAdded);
 							break;
 					}
 				} else {
-					console.log(error, result);
+					this.logger.error('Error reading event: %s', error.message);
 				}
 			});
+			localData.watchedcontracts[cleanAddress(contractaddress)] = listener;
+		};
 
-			watchedcontracts[contractaddress] = listener;
-
-		}
-
-
-		// clean the hashtaglist every hour.
-		setInterval(cleanepoch, 1000 * 60 * 60);
-
-		function addexpiration(ipfshash, expiretimestamp) {
-			var epoch = timestamptoepoch(expiretimestamp);
+		let addexpiration = (ipfshash, expiretimestamp) => {
+			let epoch = timestamptoepoch(expiretimestamp);
 			//  is this ipfshash unknown or is this the latest expiry of an existing ipfshash ?
-			if (!hashvalidity[ipfshash] || hashvalidity[ipfshash] < expiretimestamp) {
-
+			if (!localData.hashexpiry[ipfshash] ||
+				localData.hashexpiry[ipfshash] < expiretimestamp) {
 				// remove old epoch if it exists
-				var oldepoch = timestamptoepoch(hashvalidity[ipfshash]);
-				if (epochtohash[oldepoch] && epochtohash[oldepoch][ipfshash]) {
-					delete epochtohash[oldepoch][ipfshash];
+				let oldepoch = timestamptoepoch(localData.hashexpiry[ipfshash]);
+				if (localData.epochtohash[oldepoch] && localData.epochtohash[oldepoch][ipfshash]) {
+					delete localData.epochtohash[oldepoch][ipfshash];
 				}
 
 				// mark latest expiration date
-				hashvalidity[ipfshash] = expiretimestamp;
+				localData.hashexpiry[ipfshash] = expiretimestamp;
 
 				// and flag this hash in it's epoch, to make removal easier.
-				if (!epochtohash[epoch]) {
-					epochtohash[epoch] = {};
+				if (!localData.epochtohash[epoch]) {
+					localData.epochtohash[epoch] = {};
 				}
-				epochtohash[epoch][ipfshash] = true;
+				localData.epochtohash[epoch][ipfshash] = true;
 			}
-		}
+		};
 
-		function cleanepoch() {
-			var now = Date.now();
-			var currentEpoch = timestamptoepoch(now);
-			console.log('current epoch is', currentEpoch);
-			if (epochtohash[currentEpoch]) {
-				for (var hash in epochtohash[currentEpoch]) {
-					if (epochtohash[currentEpoch].hasOwnProperty(hash)) {
-						console.log('in epoch:', hash);
-						if (hashvalidity[hash] && hashvalidity[hash] < now) {
+		let cleanepoch = () => {
+			let now = Date.now();
+			let currentEpoch = timestamptoepoch(now);
+			this.logger.info('current epoch is %d', currentEpoch);
+			if (localData.epochtohash[currentEpoch]) {
+				for (let hash in localData.epochtohash[currentEpoch]) {
+					if (localData.epochtohash[currentEpoch].hasOwnProperty(hash)) {
+						if (localData.hashexpiry[hash] && localData.hashexpiry[hash] < now) {
 							removehash(hash);
 						}
 					}
 				}
 			}
-		}
+		};
 
-		function removehash(ipfshash) {
-			if (!hashvalidity[hash]) return;
-			console.log('removing', hash);
-			var myEpoch = timestamptoepoch(hashvalidity[hash]);
-			ipfs.pin.rm(ipfshash, function(err, res) {
+		let removehash = (hash) => {
+			if (!localData.hashexpiry[hash]) return;
+			this.logger.info('removing hash %s', hash);
+			let myEpoch = timestamptoepoch(localData.hashexpiry[hash]);
+			ipfs.pin.rm(hash, (err, res) => {
 				if (err && err.code === 0) {
-					console.log('already unpinned');
+					this.logger.warn('already unpinned hash %s', hash);
 				} else {
-					console.log('unpinned...', res);
+					this.logger.info('unpinned hash %s', hash, res);
 				}
 			});
-			if (epochtohash[myEpoch]) {
-				delete epochtohash[myEpoch][hash];
+			if (localData.epochtohash[myEpoch]) {
+				delete localData.epochtohash[myEpoch][hash];
 			}
-			delete hashvalidity[hash];
-		}
+			delete localData.hashexpiry[hash];
+		};
 
-		function timestamptoepoch(timestamp) {
+		let timestamptoepoch = (timestamp) => {
 			return Math.floor(timestamp / (1000 * 60 * 60));
-		}
+		};
+
+		let dumpstate = () => {
+			web3.eth.getBlockNumber()
+				.then((blockNumber) => {
+					this.logger.info('state %s', JSON.stringify({
+						lastblock: localData.lastblock,
+						hashexpiry: localData.hashexpiry,
+						memberquota: localData.memberquota,
+						contracts: Object.keys(localData.watchedcontracts),
+					}, true, 2));
+				});
+		};
+
+		// clean the hashtaglist every hour.
+		setInterval(cleanepoch, 1000 * 60 * 60);
 	}
 }
-module.exports = IPFSConsortiumProxy
+module.exports = IPFSConsortiumProxy;

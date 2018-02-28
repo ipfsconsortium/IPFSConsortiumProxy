@@ -1,7 +1,6 @@
 #!/usr/bin/env node
-'use strict'
+'use strict';
 
-let ipfsconsortiumproxy = require('./src/lib/ipfsconsortiumproxy-cli.js')
-
-var cli = new ipfsconsortiumproxy();
+const IPFSConsortiumProxy = require('./src/lib/ipfsconsortiumproxy-cli.js');
+const cli = new IPFSConsortiumProxy();
 cli.go();
