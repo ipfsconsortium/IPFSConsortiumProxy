@@ -1,6 +1,6 @@
 {
   "name": "ipfsconsortiumproxy",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "IPFS consortium deamon scripts wrapped as an npm module",
   "main": "index.js",
   "scripts": {
@@ -26,7 +26,7 @@
     "command-line-tool": "^0.8.0",
     "dotenv": "^5.0.0",
     "ipfs-api": "^18.1.1",
-    "ipfsconsortiumcontracts": "git+https://git@github.com/ipfsconsortium/IPFSConsortiumContracts.git",
+    "ipfsconsortiumcontracts": "^0.0.1",
     "level": "^3.0.0",
     "web3": "^1.0.0-beta.30",
     "winston": "^3.0.0-rc1"
