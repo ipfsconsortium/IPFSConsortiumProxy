@@ -28,10 +28,10 @@ class IPFSConsortiumProxy {
 		this.options = options;
 	}
 
-  /**
-   * Bootstrap the consortium code
-   *
-   */
+	/**
+	 * Bootstrap the consortium code
+	 *
+	 */
 	go() {
 		const Web3 = require('web3');
 		const ipfsAPI = require('ipfs-api');
@@ -187,22 +187,17 @@ class IPFSConsortiumProxy {
 				if (error == null) {
 					switch (result.event) {
 						case 'HashAdded':
-							if (isMember(result.returnValues.pubKey)) {
-								web3.eth.getBlock(result.blockNumber, (error, blockInfo) => {
-									const expiryTimeStamp =
-										parseInt(result.returnValues.ttl) +
-										blockInfo.timestamp * 1000;
-									if (result.returnValues.pubKey < Date().now) {
-										this.logger.info('already expired, not pinning');
-									} else {
-										addHash(result.returnValues.hashAdded,
-											result.returnValues.pubKey, expiryTimeStamp);
-									}
-								});
-							} else {
-								this.logger.warn('HashAdded %s is not a member of the consortium',
-									result.returnValues.pubKey);
-							}
+							web3.eth.getBlock(result.blockNumber, (error, blockInfo) => {
+								const expiryTimeStamp =
+									parseInt(result.returnValues.ttl) +
+									blockInfo.timestamp * 1000;
+								if (result.returnValues.pubKey < Date().now) {
+									this.logger.info('already expired, not pinning');
+								} else {
+									addHash(result.returnValues.hashAdded,
+										result.returnValues.pubKey, expiryTimeStamp);
+								}
+							});
 							break;
 						case 'HashRemoved':
 							removehash(result.returnValues.hashAdded);
