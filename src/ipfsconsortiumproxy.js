@@ -75,9 +75,9 @@ class IPFSConsortiumProxy {
 				if (error == null) {
 					switch (result.event) {
 						case 'ContractAdded':
-							this.logger.info('ContractAdded address=%s, ttl=%s',
-								result.returnValues.pubKey, result.returnValues.ttl);
-							addContract(result.returnValues.pubKey, result.blockNumber);
+							this.logger.info('ContractAdded address=%s, ttl=%s, member=%s',
+								result.returnValues.pubKey, result.returnValues.ttl, result.returnValues.member);
+							addContract(result.returnValues.member, result.returnValues.pubKey, result.blockNumber);
 							break;
 						case 'ContractRemoved':
 							this.logger.info('ContractRemoved address=%s',
@@ -102,7 +102,7 @@ class IPFSConsortiumProxy {
 						case 'HashRemoved':
 							// the contract listener will catch these, We can ignore these here.
 							break;
-						case "MemberRemoved":
+						case 'MemberRemoved':
 						case 'Confirmation':
 							break;
 						default:
