@@ -28,10 +28,10 @@ class IPFSConsortiumProxy {
 		this.options = options;
 	}
 
-  /**
-   * Bootstrap the consortium code
-   *
-   */
+	/**
+	 * Bootstrap the consortium code
+	 *
+	 */
 	go() {
 		const Web3 = require('web3');
 		const ipfsAPI = require('ipfs-api');
@@ -75,9 +75,14 @@ class IPFSConsortiumProxy {
 				if (error == null) {
 					switch (result.event) {
 						case 'ContractAdded':
-							this.logger.info('ContractAdded address=%s, ttl=%s',
-								result.returnValues.pubKey, result.returnValues.ttl);
-							addContract(result.returnValues.pubKey, result.blockNumber);
+							this.logger.info('ContractAdded address=%s, ttl=%s, member=%s',
+								result.returnValues.pubKey, result.returnValues.ttl, result.returnValues.member);
+							addContract(result.returnValues.member, result.returnValues.pubKey, result.blockNumber);
+							break;
+						case 'ContractRemoved':
+							this.logger.info('ContractRemoved address=%s',
+								result.returnValues.pubKey);
+							removeContract(result.returnValues.pubKey);
 							break;
 						case 'MemberAdded':
 							this.logger.info('MemberAdded pubkey=%s',
@@ -96,6 +101,9 @@ class IPFSConsortiumProxy {
 						case 'HashAdded':
 						case 'HashRemoved':
 							// the contract listener will catch these, We can ignore these here.
+							break;
+						case 'MemberRemoved':
+						case 'Confirmation':
 							break;
 						default:
 							this.logger.warn('unknown Event: %s', result.event);
@@ -173,7 +181,7 @@ class IPFSConsortiumProxy {
 			});
 		};
 
-		let addContract = (contractaddress, startblock) => {
+		let addContract = (member, contractaddress, startblock) => {
 			if (localData.watchedcontracts[cleanAddress(contractaddress)]) {
 				this.logger.info('already watching address %s', contractaddress);
 				return;
@@ -187,7 +195,7 @@ class IPFSConsortiumProxy {
 				if (error == null) {
 					switch (result.event) {
 						case 'HashAdded':
-							if (isMember(result.returnValues.pubKey)) {
+							if (isMember(member)) {
 								web3.eth.getBlock(result.blockNumber, (error, blockInfo) => {
 									const expiryTimeStamp =
 										parseInt(result.returnValues.ttl) +
@@ -196,7 +204,7 @@ class IPFSConsortiumProxy {
 										this.logger.info('already expired, not pinning');
 									} else {
 										addHash(result.returnValues.hashAdded,
-											result.returnValues.pubKey, expiryTimeStamp);
+											member, expiryTimeStamp);
 									}
 								});
 							} else {
@@ -214,6 +222,13 @@ class IPFSConsortiumProxy {
 			});
 			localData.watchedcontracts[cleanAddress(contractaddress)] = listener;
 		};
+
+		let removeContract = (contractaddress) => {
+			if (localData.watchedcontracts[cleanAddress(contractaddress)]) {
+				delete localData.watchedcontracts[cleanAddress(contractaddress)];
+			}
+		};
+
 
 		let addexpiration = (ipfshash, expiretimestamp) => {
 			let epoch = timestamptoepoch(expiretimestamp);
