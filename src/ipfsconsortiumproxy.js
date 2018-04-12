@@ -18,12 +18,29 @@ class IPFSConsortiumProxy {
 			format,
 			transports,
 		} = require('winston');
+
+		const winstonFormat = format.printf((info) => {
+			let level = info.level.toUpperCase();
+			let message = info.message;
+			let filteredInfo = Object.assign({}, info, {
+				'level': undefined,
+				'message': undefined,
+				'splat': undefined,
+				'timestamp': undefined,
+			});
+			let append = JSON.stringify(filteredInfo, null, 4);
+			if (append != '{}') {
+				message = message + ' ' + append;
+			}
+			return `${info.timestamp} ${level} : ${message}`;
+		});
+
 		this.logger = createLogger({
 			level: 'info',
 			format: format.combine(
-				format.colorize(),
 				format.splat(),
-				format.simple()
+				format.timestamp(),
+				winstonFormat
 			),
 			transports: [new transports.Console()],
 		});
@@ -124,7 +141,7 @@ class IPFSConsortiumProxy {
 						case 'Confirmation':
 							break;
 						default:
-							this.logger.warn('unknown Event: %s', result.event);
+							this.logger.warn('unknown Event: %s', JSON.stringify(result));
 							break;
 					}
 				} else {
@@ -480,7 +497,7 @@ class IPFSConsortiumProxy {
 					let cache = [];
 
 					// Avoid circular references and 'remove' listeners
-					let newJSON = JSON.parse(JSON.stringify(localData.memberInfo, function (key, value) {
+					let newJSON = JSON.parse(JSON.stringify(localData.memberInfo, function(key, value) {
 						if (typeof value === 'object' && value !== null) {
 							if (cache.indexOf(value) !== -1) {
 								// Circular reference found, discard key
@@ -495,7 +512,11 @@ class IPFSConsortiumProxy {
 
 					cache = null; // Enable garbage collection
 
-					this.logger.info('state %s', JSON.stringify({ memberInfo: newJSON, hashInfo: localData.hashInfo, hashexpiry: localData.hashexpiry }, true, 2));
+					this.logger.info('state %s', JSON.stringify({
+						memberInfo: newJSON,
+						hashInfo: localData.hashInfo,
+						hashexpiry: localData.hashexpiry
+					}, true, 2));
 				});
 		};
 
