@@ -17,7 +17,7 @@ module.exports = {
 						case 'HashAdded':
 							resolveExpiration(transaction.blockNumber, result.returnValues.ttl).then((expiryTimeStamp) => {
 								if (expiryTimeStamp >= 0) {
-									options.pinner.pin(ownershiptracker.getOwner(options.contractAddress) || transaction.from, result.returnValues.hash, result.returnValues.ttl);
+									options.pinner.pin(options.ownershiptracker.getOwner(options.contractAddress) || transaction.from, result.returnValues.hash, result.returnValues.ttl);
 								} else {
 									options.logger.info('hash %s already expired. Not pinning', result.returnValues.hash);
 								}
