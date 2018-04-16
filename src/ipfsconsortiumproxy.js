@@ -45,6 +45,12 @@ class IPFSConsortiumProxy {
 			transports: [new transports.Console()],
 		});
 		this.options = options;
+
+		this.plugins = {
+			'peepeth': require('./plugins/peepeth'),
+			'ipfsconsortium': require('./plugins/ipfsconsortium'),
+		};
+
 	}
 
 	/**
@@ -130,6 +136,11 @@ class IPFSConsortiumProxy {
 
 			pinner.setLimit(localData.sizelimit);
 
+			addWatch({
+				type: 'peepeth',
+			});
+
+			// the watcher on the IPFS consortium contract
 			contract.events.allEvents({
 				fromBlock: this.options.STARTBLOCK,
 			}, (error, result) => {
@@ -202,42 +213,29 @@ class IPFSConsortiumProxy {
 			});
 		});
 
-		
 
 
 		// watchers
 		//let watchers = {};
 		let addWatch = (options) => {
-			this.logger.info('Adding an event listener type %s on contract %s : options %j', options.type, options.contractAddress, options);
-			options.contractAddress = cleanAddress(options.contractAddress);
-			//watchers[options.contractAddress] = 
-			contract.events.allEvents({
-				fromBlock: options.startBlock,
-			}, (error, result) => {
-				if (error == null) {
-					web3.eth.getTransaction(result.transactionHash).then((transaction) => {
-						switch (result.event) {
-							case 'HashAdded':
-								resolveExpiration(transaction.blockNumber, result.returnValues.ttl).then((expiryTimeStamp) => {
-									if (expiryTimeStamp >= 0) {
-										pinner.pin(ownershiptracker.getOwner(options.contractAddress) || transaction.from, result.returnValues.hash, result.returnValues.ttl);
-									} else {
-										this.logger.info('hash %s already expired. Not pinning', result.returnValues.hash);
-									}
-								});
-								break;
-							case 'HashRemoved':
-								pinner.unpin(ownershiptracker.getOwner(options.contractAddress) || transaction.from, result.returnValues.hash);
-								break;
-						}
-					});
-				} else {
-					this.logger.error('Error reading event: %s', error.message);
-				}
-			});
+			this.logger.info('Adding an event listener type %s - options %j', options.type, options);
+
+			if (this.plugins[options.type]) {
+				options.web3 = web3;
+				options.logger = this.logger;
+				options.pinner = pinner;
+				options.ownershiptracker = ownershiptracker;
+				options.contractAddress = cleanAddress(options.contractAddress);
+				options.ipfs = ipfs;
+				this.plugins[options.type].addWatch(options);
+			} else {
+				this.logger.info('no such plugin %s', options.type);
+			}
+
 		}
 
 		let cleanAddress = (address) => {
+			if (!address) return;
 			return address.toLowerCase();
 		};
 
@@ -324,20 +322,7 @@ class IPFSConsortiumProxy {
 			delete localData.memberInfo[cleanAddress(member)].contracts[(cleanAddress(contractaddress))];
 		};
 
-		let resolveExpiration = (blockNumber, ttl) => {
-			return new Promise((resolve, reject) => {
-				ttl = parseInt(ttl);
-				if (ttl === 0) {
-					return resolve(0);
-				}
-				web3.eth.getBlock(blockNumber).then((blockInfo) => {
-					const expiryTimeStamp =
-						ttl +
-						blockInfo.timestamp * 1000;
-					return resolve(expiryTimeStamp);
-				});
-			});
-		}
+
 
 		// let addexpiration = (ipfshash, blockNumber, ttl) => {
 		// 	web3.eth.getBlock(blockNumber, (error, blockInfo) => {
