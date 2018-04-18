@@ -1,7 +1,9 @@
 # IPFS Consortium proxy
 
-This script watches a consortium proxy contract and pins/unpins IPFS data on your local
-IPFS server according to the Events that flow through the monitored contracts.
+This *IPFS consortium tool* allows you to jointly host IPFS data in a with a group of other IPFS users ( called a consortium ).
+
+The Proxy script watches a consortium smart-contract and pins/unpins IPFS data on your local
+IPFS server according to the Events that flow through the contract, and other contracts that can be added by members of the same consortium.
 
 # Installation
 
@@ -41,17 +43,18 @@ Type `ipfsconsortiumproxy -h` for more info about the available parameters.
 just type `ipfsconsortiumproxy` to start it up.
 
 
-## How does the consortium work ?
+## How does a consortium work ?
 
-The consortium is managed by a smart contract deployed here 
+A consortium is managed by a smart contract. A few example consortium contracts are deployed here 
 
 * Livenet `0x7433c7c768be4025ab791fb7b2942c3d9e309f3e` ( startblock 4090116 )
 * Rinkeby `0x3ef882ffcE8fC40f6Ca473f29AC16dE8a60419BB` ( startblock 1846107 )
 
-## How can I join the consortium ?
+## How can I create my own consortium ?
 
-* Go to the IPFSConsortium chat on Riot ( see below ) and ask for access
+* Go to the IPFSConsortium chat on Riot ( see below ) and ask for help
 * OR: Deploy your own version of the contract, and start your own consortium
+* OR: Join an existing consortium - talk to people in our Riot channel
 
 ## How can I help support the IPFS consortium ?
 
