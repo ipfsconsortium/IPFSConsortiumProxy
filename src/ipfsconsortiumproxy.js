@@ -48,10 +48,12 @@ class IPFSConsortiumProxy {
 
 		this.plugins = {
 			'ipfsconsortium': require('./plugins/ipfsconsortium'),
+			'ipfsconsortiumobject': require('./plugins/ipfsconsortiumobject'),
 		};
 
 		this.logger.info('options %j %s ', this.options, typeof this.options.PLUGINS);
 
+		// load additional plugins provided on the command line.
 		if (this.options.PLUGINS) {
 			this.options.PLUGINS.forEach((name) => {
 				this.logger.info('loading plugin %s', name);
@@ -60,9 +62,6 @@ class IPFSConsortiumProxy {
 		}
 
 		this.logger.info('plugins loaded: %j', Object.keys(this.plugins));
-
-
-		//		'peepeth': require('./plugins/peepeth'),
 
 	}
 
@@ -154,10 +153,12 @@ class IPFSConsortiumProxy {
 
 			pinner.setLimit(localData.sizelimit);
 
-			addWatch({
-				type: 'peepeth',
-			});
-
+			// TODO : move this to plugin method..
+			if (this.plugins.peepeth) {
+				addWatch({
+					type: 'peepeth',
+				});
+			}
 			// the watcher on the IPFS consortium contract
 			contract.events.allEvents({
 				fromBlock: this.options.STARTBLOCK,
@@ -181,11 +182,16 @@ class IPFSConsortiumProxy {
 								});
 
 								break;
-								// case 'MetadataObjectAdded':
-								// 	this.logger.info('MetadataContractAdded hash=%s',
-								// 		result.returnValues.hash);
-								// 	metadataContractAdded(transaction.from, result.returnValues.hash);
-								// 	break;
+							case 'MetadataObjectAdded':
+								this.logger.info('MetadataContractAdded hash=%s',
+									result.returnValues.hash);
+								addWatch({
+									type: 'ipfsconsortiumobject',
+									hash: result.returnValues.hash,
+									transaction: transaction,
+								});
+								metadataContractAdded(transaction.from, result.returnValues.hash);
+								break;
 								// case 'ContractRemoved':
 								// 	this.logger.info('ContractRemoved member=%s address=%s',
 								// 		result.returnValues.member,

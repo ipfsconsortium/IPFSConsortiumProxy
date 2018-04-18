@@ -29,7 +29,7 @@
     "command-line-tool": "^0.8.0",
     "dotenv": "^5.0.1",
     "ipfs-api": "^20.0.1",
-    "ipfsconsortiumcontracts": "^0.0.3",
+    "ipfsconsortiumcontracts": "^0.0.5",
     "level": "^3.0.0",
     "web3": "^1.0.0-beta.30",
     "winston": "^3.0.0-rc1"
@@ -37,7 +37,7 @@
   "devDependencies": {
     "eslint": "^4.19.1",
     "eslint-config-google": "^0.9.1",
-    "mocha": "^5.1.0",
+    "mocha": "^5.1.1",
     "nyc": "^11.6.0"
   },
   "bin": {
