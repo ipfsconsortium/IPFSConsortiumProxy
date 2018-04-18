@@ -47,9 +47,22 @@ class IPFSConsortiumProxy {
 		this.options = options;
 
 		this.plugins = {
-			'peepeth': require('./plugins/peepeth'),
 			'ipfsconsortium': require('./plugins/ipfsconsortium'),
 		};
+
+		this.logger.info('options %j %s ', this.options, typeof this.options.PLUGINS);
+
+		if (this.options.PLUGINS) {
+			this.options.PLUGINS.forEach((name) => {
+				this.logger.info('loading plugin %s', name);
+				this.plugins[name] = require('./plugins/' + name);
+			});
+		}
+
+		this.logger.info('plugins loaded: %j', Object.keys(this.plugins));
+
+
+		//		'peepeth': require('./plugins/peepeth'),
 
 	}
 
@@ -69,6 +82,11 @@ class IPFSConsortiumProxy {
 			protocol: 'http',
 		});
 
+		// const ipfs = ipfsAPI({
+		// 	host: 'ipfs.infura.io',
+		// 	port: 5001,
+		// 	protocol: 'https',
+		// });
 		// const topic = 'quaak'; // this.options.CONTRACTADDRESS;
 
 		// const receiveMsg = (msg) => {
@@ -145,7 +163,6 @@ class IPFSConsortiumProxy {
 				fromBlock: this.options.STARTBLOCK,
 			}, (error, result) => {
 				if (error == null) {
-					//this.logger.info('Received event %s in txhash %s', result.event, result.transactionHash);
 					web3.eth.getTransaction(result.transactionHash).then((transaction) => {
 						switch (result.event) {
 							case 'ContractAdded':
@@ -322,51 +339,6 @@ class IPFSConsortiumProxy {
 			delete localData.memberInfo[cleanAddress(member)].contracts[(cleanAddress(contractaddress))];
 		};
 
-
-
-		// let addexpiration = (ipfshash, blockNumber, ttl) => {
-		// 	web3.eth.getBlock(blockNumber, (error, blockInfo) => {
-		// 		const expiryTimeStamp =
-		// 			parseInt(ttl) +
-		// 			blockInfo.timestamp * 1000;
-
-		// 		let now = new Date().getTime();
-
-		// 		if (expiryTimeStamp < now && ttl != parseInt(0)) {
-		// 			this.logger.info('already expired, not pinning');
-		// 			removehash(ipfshash);
-		// 		} else {
-		// 			let epoch = timestamptoepoch(expiryTimeStamp);
-		// 			//  is this ipfshash unknown or is this the latest expiry of an existing ipfshash ?
-		// 			if (!localData.hashexpiry[ipfshash] ||
-		// 				localData.hashexpiry[ipfshash] < expiryTimeStamp) {
-		// 				// remove old epoch if it exists
-		// 				let oldepoch = timestamptoepoch(localData.hashexpiry[ipfshash]);
-		// 				if (localData.epochtohash[oldepoch] && localData.epochtohash[oldepoch][ipfshash]) {
-		// 					delete localData.epochtohash[oldepoch][ipfshash];
-		// 				}
-		// 				if (ttl == parseInt(0)) {
-		// 					localData.hashexpiry[ipfshash] = '-';
-		// 				} else {
-		// 					// mark latest expiration date
-		// 					localData.hashexpiry[ipfshash] = expiryTimeStamp;
-		// 				}
-
-		// 				// and flag this hash in it's epoch, to make removal easier.
-		// 				if (!localData.epochtohash[epoch]) {
-		// 					localData.epochtohash[epoch] = {};
-		// 				}
-		// 				localData.epochtohash[epoch][ipfshash] = true;
-		// 			}
-		// 		}
-
-		// 		localData.hashInfo[ipfshash].status = 'complete';
-		// 		if (localData.hashInfo[ipfshash].removeHash) {
-		// 			removehash(ipfshash);
-		// 		}
-		// 	});
-		// };
-
 		let removehash = (IPFShash, hashOwner = '') => {
 			if (!localData.hashInfo[IPFShash]) {
 				return;
@@ -435,52 +407,42 @@ class IPFSConsortiumProxy {
 		let dumpstate = () => {
 			web3.eth.getBlockNumber()
 				.then((blockNumber) => {
-					//let cache = [];
-
-					// // Avoid circular references and 'remove' listeners
-					// let newJSON = JSON.parse(JSON.stringify(localData.memberInfo, function(key, value) {
-					// 	if (typeof value === 'object' && value !== null) {
-					// 		if (cache.indexOf(value) !== -1) {
-					// 			// Circular reference found, discard key
-					// 			return;
-					// 		}
-					// 		// Store value in our collection
-					// 		cache.push(value);
+					// ipfs.pin.ls((err, pinset) => {
+					// 	if (err) {
+					// 		throw err
 					// 	}
-					// 	if (key === 'listeners') return;
-					// 	return value;
-					// }));
-
-					//cache = null; // Enable garbage collection
-
+					// 	//  console.log(pinset)
 					this.logger.info('state %s', JSON.stringify({
 						pinning: pinner.getAccountingStats(),
 						ownership: ownershiptracker.getOwnerStats(),
+						//pinset: pinset
 						//memberInfo: newJSON,
 						//hashInfo: localData.hashInfo,
 						//hashexpiry: localData.hashexpiry
 					}, true, 2));
+					// })
+
 				});
 		};
 
-		let cleanepoch = () => {
-			dumpstate();
-			let now = Date.now();
-			let currentEpoch = timestamptoepoch(now);
-			this.logger.info('current epoch is %d', currentEpoch);
-			if (localData.epochtohash[currentEpoch]) {
-				for (let hash in localData.epochtohash[currentEpoch]) {
-					if (localData.epochtohash[currentEpoch].hasOwnProperty(hash)) {
-						if (localData.hashexpiry[hash] && localData.hashexpiry[hash] < now) {
-							removehash(hash);
-						}
-					}
-				}
-			}
-		};
+		// let cleanepoch = () => {
+		// 	dumpstate();
+		// 	let now = Date.now();
+		// 	let currentEpoch = timestamptoepoch(now);
+		// 	this.logger.info('current epoch is %d', currentEpoch);
+		// 	if (localData.epochtohash[currentEpoch]) {
+		// 		for (let hash in localData.epochtohash[currentEpoch]) {
+		// 			if (localData.epochtohash[currentEpoch].hasOwnProperty(hash)) {
+		// 				if (localData.hashexpiry[hash] && localData.hashexpiry[hash] < now) {
+		// 					removehash(hash);
+		// 				}
+		// 			}
+		// 		}
+		// 	}
+		// };
 
 		// clean the hashtaglist every hour.
-		setInterval(cleanepoch, 1000 * 60 * 60);
+		//setInterval(cleanepoch, 1000 * 60 * 60);
 		setInterval(dumpstate, 1000 * 10);
 	}
 }

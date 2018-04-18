@@ -40,6 +40,7 @@ class IPFSConsortiumProxyCli {
 			WEB3HOSTWS: options.web3hostws || process.env.WEB3HOSTWS,
 			CONTRACTADDRESS: options.contractaddress || process.env.CONTRACTADDRESS,
 			STARTBLOCK: options.startblock || process.env.STARTBLOCK,
+			PLUGINS: options.plugins,
 		};
 
 		if (!proxyOptions.IPFSAPIHOST ||

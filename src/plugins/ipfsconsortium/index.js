@@ -3,6 +3,9 @@ const IPFSProxy = require(
 const IPFSEvents = require(
 	'../../../node_modules/ipfsconsortiumcontracts/build/contracts/IPFSEvents.json');
 
+/*
+* The default plugin for the native IPFS pinning consortium events
+*/
 module.exports = {
 	addWatch: (options) => {
 
