@@ -15,6 +15,7 @@ class Pinner {
 		this.pinLimit = options.pinLimit;
 		this.logger = options.logger;
 		this.ipfs = options.ipfs;
+		this.throttledIPFS = options.throttledIPFS;
 		this.pinAccounting = {};
 		this.hashExpiry = {};
 		this.currentProcess = {};
@@ -81,11 +82,11 @@ class Pinner {
 			}
 			this.logger.info('pinning %s for owner %s', IPFShash, owner);
 
-			this.ipfs.cat(IPFShash).then((r) => {
+			this.throttledIPFS.cat(IPFShash).then((r) => {
 				this.logger.info('hash %s fetched %d bytes', IPFShash, r.byteLength);
 				let hashByteSize = new BN(r.byteLength);
 				if (this.canAddToQuota(owner, hashByteSize)) {
-					this.ipfs.pin.add(IPFShash).then((res) => {
+					this.throttledIPFS.pin.add(IPFShash).then((res) => {
 						this.logger.info('pinning complete... %s', JSON.stringify(res));
 						this.addToQuota(owner, hashByteSize);
 						if (ttl > 0) {

@@ -135,15 +135,17 @@ class IPFSConsortiumProxy {
 			hashInfo: {},
 		};
 
-		let pinner = new Pinner({
-			ipfs: ipfs,
-			logger: this.logger
-		});
-
 		let throttledIPFS = new ThrottledIPFS({
 			ipfs: ipfs,
 			logger: this.logger
 		});
+
+		let pinner = new Pinner({
+			ipfs: ipfs,
+			throttledIPFS : throttledIPFS,
+			logger: this.logger
+		});
+
 
 		let ownershiptracker = new OwnershipTracker();
 
@@ -428,6 +430,7 @@ class IPFSConsortiumProxy {
 					this.logger.info('state %s', JSON.stringify({
 						pinning: pinner.getAccountingStats(),
 						ownership: ownershiptracker.getOwnerStats(),
+						throttledIPFS : throttledIPFS.getStats(),
 						//pinset: pinset
 						//memberInfo: newJSON,
 						//hashInfo: localData.hashInfo,
