@@ -102,7 +102,7 @@ module.exports = {
 					}
 				});
 			} else {
-				this.logger.error('Error reading event: %s', error.message);
+				options.logger.error('Error reading event: %s', error.message);
 			}
 		});
 
