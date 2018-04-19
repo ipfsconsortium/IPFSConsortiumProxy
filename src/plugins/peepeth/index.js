@@ -40,7 +40,7 @@ module.exports = {
 							var found = decodedData.params.find(function(element) {
 								return element.name === '_ipfsHash';
 							});
-							options.ipfs.cat(found.value).then((file) => {
+							options.throttledIPFS.cat(found.value).then((file) => {
 								const s = JSON.parse(file.toString());
 								if (s.batchSaveJSON && Array.isArray(s.batchSaveJSON)) {
 									s.batchSaveJSON.forEach((batchItem) => {
@@ -73,7 +73,7 @@ module.exports = {
 								return element.name === '_ipfsHash';
 							});
 							options.pinner.pin(metaData.contract, found.value, defaultTtl);
-							options.ipfs.cat(found.value).then((file) => {
+							options.throttledIPFS.cat(found.value).then((file) => {
 								const s = JSON.parse(file.toString());
 								if (s.pic && s.pic != "") {
 									options.pinner.pin(metaData.contract, s.pic, defaultTtl);
@@ -108,11 +108,13 @@ module.exports = {
 
 		function parsePeep(ipfsHash) {
 			options.pinner.pin(metaData.contract, ipfsHash, defaultTtl);
-			options.ipfs.cat(ipfsHash).then((file) => {
+			options.throttledIPFS.cat(ipfsHash).then((file) => {
 				const s = JSON.parse(file.toString());
 				if (s.pic && s.pic != "") {
 					options.pinner.pin(metaData.contract, s.pic, defaultTtl);
 				}
+			}).catch((e)=>{
+				options.logger.log('Awel ! %j',e);
 			});
 		}
 

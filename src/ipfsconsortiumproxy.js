@@ -73,6 +73,7 @@ class IPFSConsortiumProxy {
 		const Web3 = require('web3');
 		const ipfsAPI = require('ipfs-api');
 		const Pinner = require('./Pinner');
+		const ThrottledIPFS = require('./ThrottledIPFS');
 		const OwnershipTracker = require('./OwnershipTracker');
 
 		const ipfs = ipfsAPI({
@@ -135,6 +136,11 @@ class IPFSConsortiumProxy {
 		};
 
 		let pinner = new Pinner({
+			ipfs: ipfs,
+			logger: this.logger
+		});
+
+		let throttledIPFS = new ThrottledIPFS({
 			ipfs: ipfs,
 			logger: this.logger
 		});
@@ -250,6 +256,7 @@ class IPFSConsortiumProxy {
 				options.ownershiptracker = ownershiptracker;
 				options.contractAddress = cleanAddress(options.contractAddress);
 				options.ipfs = ipfs;
+				options.throttledIPFS = throttledIPFS;
 				this.plugins[options.type].addWatch(options);
 			} else {
 				this.logger.info('no such plugin %s', options.type);

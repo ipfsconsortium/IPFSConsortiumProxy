@@ -18,7 +18,7 @@ class Pinner {
 		this.pinAccounting = {};
 		this.hashExpiry = {};
 		this.currentProcess = {};
-		this.q = queue((task, callback) => {
+		this.pinnerQueue = queue((task, callback) => {
 			this.logger.info('start task for hash %s', task.IPFShash);
 			this.currentProcess[task.IPFShash] = Date.now();
 			this._pin(task.owner, task.IPFShash, task.ttl).then(() => {
@@ -27,9 +27,9 @@ class Pinner {
 			}).catch((e) => {
 				delete this.currentProcess[task.IPFShash];
 				this.logger.warn('re-queueing item %s', task.IPFShash);
-				this.q.push(task);
+				this.pinnerQueue.push(task);
 			})
-		}, 2);
+		}, 4);
 	}
 
 	setLimit(sizeLimit) {
@@ -63,7 +63,7 @@ class Pinner {
 			return;
 		}
 		this.logger.info('adding %s to queue', IPFShash);
-		this.q.push({
+		this.pinnerQueue.push({
 			owner: owner,
 			IPFShash: IPFShash,
 			ttl: ttl,
@@ -72,7 +72,6 @@ class Pinner {
 
 	_pin(owner, IPFShash, ttl) {
 		return new Promise((resolve, reject) => {
-
 
 			owner = this.cleanAddress(owner);
 			if (!this.pinAccounting[owner]) {
@@ -143,7 +142,7 @@ class Pinner {
 			pinAccounting: this.pinAccounting,
 			hashExpiry: this.hashExpiry,
 			count: this.count,
-			queue: this.q.length(),
+			queue: this.pinnerQueue.length(),
 			processing: this.currentProcess,
 		};
 	}
