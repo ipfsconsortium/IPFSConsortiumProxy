@@ -18,19 +18,19 @@ class Pinner {
 		this.throttledIPFS = options.throttledIPFS;
 		this.pinAccounting = {};
 		this.hashExpiry = {};
-		this.currentProcess = {};
-		this.pinnerQueue = queue((task, callback) => {
-			this.logger.info('start task for hash %s', task.IPFShash);
-			this.currentProcess[task.IPFShash] = Date.now();
-			this._pin(task.owner, task.IPFShash, task.ttl).then(() => {
-				delete this.currentProcess[task.IPFShash];
-				callback();
-			}).catch((e) => {
-				delete this.currentProcess[task.IPFShash];
-				this.logger.warn('re-queueing item %s', task.IPFShash);
-				this.pinnerQueue.push(task);
-			})
-		}, 4);
+		//this.currentProcess = {};
+		// this.pinnerQueue = queue((task, callback) => {
+		// 	this.logger.info('start task for hash %s', task.IPFShash);
+		// 	this.currentProcess[task.IPFShash] = Date.now();
+		// 	this._pin(task.owner, task.IPFShash, task.ttl).then(() => {
+		// 		delete this.currentProcess[task.IPFShash];
+		// 		callback();
+		// 	}).catch((e) => {
+		// 		delete this.currentProcess[task.IPFShash];
+		// 		this.logger.warn('re-queueing item %s', task.IPFShash);
+		// 		this.pinnerQueue.push(task);
+		// 	})
+		// }, 4);
 	}
 
 	setLimit(sizeLimit) {
@@ -58,21 +58,28 @@ class Pinner {
 			this.pinAccounting[address].used.sub(amount);
 	};
 
-	pin(owner, IPFShash, ttl) {
-		if (!IPFShash || IPFShash.length == 0) {
-			this.logger.info('no IPFS hash given');
-			return;
-		}
-		this.logger.info('adding %s to queue', IPFShash);
-		this.pinnerQueue.push({
-			owner: owner,
-			IPFShash: IPFShash,
-			ttl: ttl,
-		});
-	};
+	// pin(owner, IPFShash, ttl) {
+	// 	if (!IPFShash || IPFShash.length == 0) {
+	// 		this.logger.info('no IPFS hash given');
+	// 		return;
+	// 	}
+	// 	this.logger.info('adding %s to queue', IPFShash);
+	// 	this.pinnerQueue.push({
+	// 		owner: owner,
+	// 		IPFShash: IPFShash,
+	// 		ttl: ttl,
+	// 	});
+	// };
 
-	_pin(owner, IPFShash, ttl) {
+	pin(owner, IPFShash, ttl) {
+
+
 		return new Promise((resolve, reject) => {
+
+			if (!IPFShash || IPFShash.length == 0) {
+				this.logger.info('no IPFS hash given');
+				return reject();
+			}
 
 			owner = this.cleanAddress(owner);
 			if (!this.pinAccounting[owner]) {
@@ -86,7 +93,7 @@ class Pinner {
 				this.logger.info('hash %s fetched %d bytes', IPFShash, r.byteLength);
 				let hashByteSize = new BN(r.byteLength);
 				if (this.canAddToQuota(owner, hashByteSize)) {
-					this.throttledIPFS.pin.add(IPFShash).then((res) => {
+					this.throttledIPFS.pin(IPFShash).then((res) => {
 						this.logger.info('pinning complete... %s', JSON.stringify(res));
 						this.addToQuota(owner, hashByteSize);
 						if (ttl > 0) {
@@ -95,17 +102,17 @@ class Pinner {
 							this.logger.info('this hash does not expire. Not setting an expiry date.');
 						}
 						this.count++;
-						resolve();
+						return resolve();
 					}).catch((err) => {
 						this.logger.error('Error pinning hash %s', err.message);
-						reject();
+						return reject();
 					});
 				} else {
 					this.logger.error('Pinning hash %s would exceed users %s quota => ignoring', IPFShash, owner);
 				}
 			}).catch((err) => {
 				this.logger.error(err.message);
-				reject();
+				return reject();
 			});
 		});
 	}
@@ -143,8 +150,8 @@ class Pinner {
 			pinAccounting: this.pinAccounting,
 			hashExpiry: this.hashExpiry,
 			count: this.count,
-			queue: this.pinnerQueue.length(),
-			processing: this.currentProcess,
+			//queue: this.pinnerQueue.length(),
+			//processing: this.currentProcess,
 		};
 	}
 

@@ -63,6 +63,8 @@ class IPFSConsortiumProxy {
 
 		this.logger.info('plugins loaded: %j', Object.keys(this.plugins));
 
+		this.lastblock = 0;
+
 	}
 
 	/**
@@ -172,6 +174,10 @@ class IPFSConsortiumProxy {
 				fromBlock: this.options.STARTBLOCK,
 			}, (error, result) => {
 				if (error == null) {
+					// for accounting purposes
+					if (result.blockNumber > this.lastblock){
+						this.lastblock = result.blockNumber;
+					}
 					web3.eth.getTransaction(result.transactionHash).then((transaction) => {
 						switch (result.event) {
 							case 'ContractAdded':
@@ -263,7 +269,6 @@ class IPFSConsortiumProxy {
 			} else {
 				this.logger.info('no such plugin %s', options.type);
 			}
-
 		}
 
 		let cleanAddress = (address) => {
@@ -271,14 +276,7 @@ class IPFSConsortiumProxy {
 			return address.toLowerCase();
 		};
 
-
 		let metadataContractAdded = (member, metadataHash) => {
-
-			// Only members can add a 'metadataContract' so if the member
-			// doesn't exist yet it's created
-			// if (!isMember(member)) {
-			// 	addMember(member);
-			// }
 
 			// Obtaining contract metadata info
 			ipfs.cat(metadataHash).then((file) => {
@@ -359,11 +357,9 @@ class IPFSConsortiumProxy {
 				return;
 			}
 
-
 			if (hashOwner != '') {
 				localData.hashInfo[IPFShash].owner[cleanAddress(hashOwner)] = 0;
 			}
-
 
 			// it's marked to be erased
 			if (localData.hashInfo[IPFShash].status == 'pending') {
@@ -427,10 +423,23 @@ class IPFSConsortiumProxy {
 					// 		throw err
 					// 	}
 					// 	//  console.log(pinset)
+					// 	
+					// 	
+					// 	
+					let pluginStats = {};
+					for (let i=0;i<Object.keys(this.plugins).length;i++){
+						pluginStats[Object.keys(this.plugins)[i]] = 
+						this.plugins[Object.keys(this.plugins)[i]].getStats();
+					}
+
+					
 					this.logger.info('state %s', JSON.stringify({
+						currentBlock : blockNumber,
+						lastProcessedBlock : this.lastblock,
 						pinning: pinner.getAccountingStats(),
 						ownership: ownershiptracker.getOwnerStats(),
 						throttledIPFS : throttledIPFS.getStats(),
+						plugins: pluginStats,
 						//pinset: pinset
 						//memberInfo: newJSON,
 						//hashInfo: localData.hashInfo,

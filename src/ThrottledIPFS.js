@@ -12,9 +12,14 @@ class ThrottledIPFS {
 	constructor(options) {
 		this.logger = options.logger;
 		this.ipfs = options.ipfs;
+		this.counters = {
+			cat: 0,
+			pin: 0,
+		};
 
 		this.catQ = queue((IPFShash, callback) => {
 			this.ipfs.cat(IPFShash).then((r) => {
+				this.counters.cat++;
 				callback(null, r);
 			}).catch((e) => {
 				callback(e);
@@ -23,6 +28,7 @@ class ThrottledIPFS {
 
 		this.pinQ = queue((IPFShash, callback) => {
 			this.ipfs.pin.add(IPFShash).then((r) => {
+				this.counters.pin++;
 				callback(null, r);
 			}).catch((e) => {
 				callback(e);
@@ -56,8 +62,12 @@ class ThrottledIPFS {
 
 	getStats() {
 		return {
-			cat: this.catQ.workersList(),
-			pin: this.pinQ.workersList(),
+			catqueuelength: this.catQ.length(),
+			catqueuerunning: this.catQ.running(),
+			catfinished: this.counters.cat,
+			pinqueuelength: this.pinQ.length(),
+			pinqueuerunning: this.pinQ.running(),
+			pinfinished: this.counters.pin,
 		};
 	}
 }

@@ -1,14 +1,17 @@
 const metaData = require('./metadata');
 const abiDecoder = require('abi-decoder');
 
-
 module.exports = {
+
+	eventCount: 0,
+	pinCount: 0,
+
 	addWatch: (options) => {
 		options.logger.info('addWatch starting Peepeth %s ( from block %s)', metaData.contract, metaData.startblock);
 		const contract = new options.web3.eth.Contract(metaData.abi, metaData.contract);
 		const defaultTtl = 60 * 60 * 24 * 365 * 10; // 10 years
 		abiDecoder.addABI(metaData.abi);
-		let eventCount = 1;
+
 
 		contract.events.allEvents({
 			fromBlock: metaData.startblock,
@@ -17,7 +20,7 @@ module.exports = {
 				options.web3.eth.getTransaction(result.transactionHash).then((transaction) => {
 
 					const decodedData = abiDecoder.decodeMethod(transaction.input);
-					eventCount++;
+					this.eventCount++;
 
 					switch (decodedData.name) {
 						case 'createAccount':
@@ -28,6 +31,7 @@ module.exports = {
 							});
 							options.logger.info('createAccount. IPFS=%s', found.value);
 							options.pinner.pin(metaData.contract, found.value, defaultTtl);
+							this.pinCount++;
 							break;
 						case 'post':
 						case 'reply':
@@ -73,13 +77,16 @@ module.exports = {
 								return element.name === '_ipfsHash';
 							});
 							options.pinner.pin(metaData.contract, found.value, defaultTtl);
+							this.pinCount++;
 							options.throttledIPFS.cat(found.value).then((file) => {
 								const s = JSON.parse(file.toString());
 								if (s.pic && s.pic != "") {
 									options.pinner.pin(metaData.contract, s.pic, defaultTtl);
+									this.pinCount++;
 								}
 								if (s.shareID && s.shareID != "") {
 									options.pinner.pin(metaData.contract, s.pic, defaultTtl);
+									this.pinCount++;
 								}
 
 							});
@@ -89,6 +96,7 @@ module.exports = {
 								return element.name === 'messageID';
 							});
 							options.pinner.pin(metaData.contract, found.value, defaultTtl);
+							this.pinCount++;
 							break;
 						case 'follow':
 						case 'unfollow':
@@ -112,12 +120,18 @@ module.exports = {
 				const s = JSON.parse(file.toString());
 				if (s.pic && s.pic != "") {
 					options.pinner.pin(metaData.contract, s.pic, defaultTtl);
+					this.pinCount++;
 				}
-			}).catch((e)=>{
-				options.logger.log('Awel ! %j',e);
+			}).catch((e) => {
+				options.logger.log('Awel ! %j', e);
 			});
 		}
+	},
 
-
-	}
+	getStats: () => {
+		return ({
+			eventCount: this.eventCount,
+			pinCount: this.pinCount,
+		});
+	},
 }

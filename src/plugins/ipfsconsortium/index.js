@@ -50,6 +50,9 @@ module.exports = {
 				});
 			});
 		}		
+	},
 
-	}
+	getStats: () => {
+		return ({});
+	},	
 }
