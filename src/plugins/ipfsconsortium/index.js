@@ -6,8 +6,8 @@ const IPFSEvents = require(
 /*
 * The default plugin for the native IPFS pinning consortium events
 */
-module.exports = {
-	addWatch: (options) => {
+class IPFSConsortium {
+	addWatch(options) {
 
 		const contract = new options.web3.eth.Contract(IPFSProxy.abi, options.contractAddress);
 
@@ -50,9 +50,11 @@ module.exports = {
 				});
 			});
 		}		
-	},
+	}
 
-	getStats: () => {
+	getStats() {
 		return ({});
-	},	
+	}
 }
+
+module.exports = IPFSConsortium;

@@ -47,8 +47,8 @@ class IPFSConsortiumProxy {
 		this.options = options;
 
 		this.plugins = {
-			'ipfsconsortium': require('./plugins/ipfsconsortium'),
-			'ipfsconsortiumobject': require('./plugins/ipfsconsortiumobject'),
+			'ipfsconsortium': new (require('./plugins/ipfsconsortium'))(),
+			'ipfsconsortiumobject': new (require('./plugins/ipfsconsortiumobject'))(),
 		};
 
 		this.logger.info('options %j %s ', this.options, typeof this.options.PLUGINS);
@@ -57,7 +57,8 @@ class IPFSConsortiumProxy {
 		if (this.options.PLUGINS) {
 			this.options.PLUGINS.forEach((name) => {
 				this.logger.info('loading plugin %s', name);
-				this.plugins[name] = require('./plugins/' + name);
+				const plugin = require('./plugins/' + name);
+				this.plugins[name] = new plugin();
 			});
 		}
 
@@ -243,6 +244,8 @@ class IPFSConsortiumProxy {
 								this.logger.warn('unknown Event: %s', JSON.stringify(result));
 								break;
 						}
+					}).catch((e)=>{
+						debugger;
 					});
 				} else {
 					this.logger.error('Error: %s', error.message);
@@ -279,7 +282,7 @@ class IPFSConsortiumProxy {
 		let metadataContractAdded = (member, metadataHash) => {
 
 			// Obtaining contract metadata info
-			ipfs.cat(metadataHash).then((file) => {
+			ThrottledIPFS.cat(metadataHash).then((file) => {
 				let contractMetadata = JSON.parse(file.toString('utf8'));
 				if (!contractMetadata.abi ||
 					!contractMetadata.contract ||
@@ -292,7 +295,7 @@ class IPFSConsortiumProxy {
 				} else {
 					// The metadata hashes of a contract are pinned by default
 					// to prevent them from being lost
-					ipfs.pin.add(metadataHash, (err, res) => {
+					ThrottledIPFS.pin(metadataHash, (err, res) => {
 						if (!err) {
 							this.logger.info('pinning metadataHash complete... %s', JSON.stringify(res));
 						} else {
@@ -314,14 +317,14 @@ class IPFSConsortiumProxy {
 							if (result.returnValues[event.ipfsParam] == '') return;
 							addHash(result.returnValues[event.ipfsParam], member, result.blockNumber, contractMetadata.ttl, contractMetadata.contract);
 						} else if (event.type == 'HashRemoved') {
-							removehash(result.returnValues[event.ipfsParam], contractMetadata.contract);
+							removeHash(result.returnValues[event.ipfsParam], contractMetadata.contract);
 							// events of type 'HashWithIndex' allow to maintain an index of hashes based on a defined key
 						} else if (event.type == 'HashWithIndex') {
 							let index = result.returnValues[event.indexKey];
 							// it gets the old hash, if it exists it'll be replaced by the new one
 							let oldHash = localData.memberInfo[cleanAddress(member)].contracts[(cleanAddress(contractMetadata.contract))].index[index];
 							if (oldHash) {
-								removehash(oldHash, contractMetadata.contract);
+								removeHash(oldHash, contractMetadata.contract);
 								if (result.returnValues[event.ipfsParam] == '') return;
 								addHash(result.returnValues[event.ipfsParam], member, result.blockNumber, contractMetadata.ttl, contractMetadata.contract, index);
 							} else {
@@ -346,13 +349,13 @@ class IPFSConsortiumProxy {
 			if (!localData.memberInfo[cleanAddress(member)].contracts[(cleanAddress(contractaddress))]) return;
 
 			Object.keys(localData.memberInfo[cleanAddress(member)].contracts[(cleanAddress(contractaddress))].hashes).forEach((hash) => {
-				removehash(hash, contractaddress);
+				removeHash(hash, contractaddress);
 			});
 
 			delete localData.memberInfo[cleanAddress(member)].contracts[(cleanAddress(contractaddress))];
 		};
 
-		let removehash = (IPFShash, hashOwner = '') => {
+		let removeHash = (IPFShash, hashOwner = '') => {
 			if (!localData.hashInfo[IPFShash]) {
 				return;
 			}
@@ -418,21 +421,12 @@ class IPFSConsortiumProxy {
 		let dumpstate = () => {
 			web3.eth.getBlockNumber()
 				.then((blockNumber) => {
-					// ipfs.pin.ls((err, pinset) => {
-					// 	if (err) {
-					// 		throw err
-					// 	}
-					// 	//  console.log(pinset)
-					// 	
-					// 	
-					// 	
 					let pluginStats = {};
 					for (let i=0;i<Object.keys(this.plugins).length;i++){
 						pluginStats[Object.keys(this.plugins)[i]] = 
 						this.plugins[Object.keys(this.plugins)[i]].getStats();
 					}
 
-					
 					this.logger.info('state %s', JSON.stringify({
 						currentBlock : blockNumber,
 						lastProcessedBlock : this.lastblock,
@@ -440,12 +434,8 @@ class IPFSConsortiumProxy {
 						ownership: ownershiptracker.getOwnerStats(),
 						throttledIPFS : throttledIPFS.getStats(),
 						plugins: pluginStats,
-						//pinset: pinset
-						//memberInfo: newJSON,
-						//hashInfo: localData.hashInfo,
-						//hashexpiry: localData.hashexpiry
 					}, true, 2));
-					// })
+				}).catch((e)=>{
 
 				});
 		};
@@ -459,7 +449,7 @@ class IPFSConsortiumProxy {
 		// 		for (let hash in localData.epochtohash[currentEpoch]) {
 		// 			if (localData.epochtohash[currentEpoch].hasOwnProperty(hash)) {
 		// 				if (localData.hashexpiry[hash] && localData.hashexpiry[hash] < now) {
-		// 					removehash(hash);
+		// 					removeHash(hash);
 		// 				}
 		// 			}
 		// 		}

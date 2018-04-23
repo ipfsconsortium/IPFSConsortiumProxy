@@ -1,8 +1,8 @@
 /*
  * The plugin for the metadata-object format on IPFS
  */
-module.exports = {
-	addWatch: (options) => {
+class IPFSConsortiumObject {
+	addWatch(options) {
 		// Obtaining contract metadata info
 		options.ipfs.cat(options.hash).then((file) => {
 			let contractMetadata = JSON.parse(file.toString('utf8'));
@@ -78,9 +78,12 @@ module.exports = {
 				});
 			});
 		}
-	},
+	}
 
-	getStats: () => {
+	getStats() {
 		return ({});
-	},
+	}
 }
+
+module.exports = IPFSConsortiumObject;
+

@@ -3,6 +3,7 @@
 /* eslint max-len: ["error", { "code": 280 }] */
 const BN = require('bn.js');
 const queue = require('async/queue');
+const Promise = require("bluebird");
 
 /**
  * Take care of pinning & accounting
@@ -18,19 +19,6 @@ class Pinner {
 		this.throttledIPFS = options.throttledIPFS;
 		this.pinAccounting = {};
 		this.hashExpiry = {};
-		//this.currentProcess = {};
-		// this.pinnerQueue = queue((task, callback) => {
-		// 	this.logger.info('start task for hash %s', task.IPFShash);
-		// 	this.currentProcess[task.IPFShash] = Date.now();
-		// 	this._pin(task.owner, task.IPFShash, task.ttl).then(() => {
-		// 		delete this.currentProcess[task.IPFShash];
-		// 		callback();
-		// 	}).catch((e) => {
-		// 		delete this.currentProcess[task.IPFShash];
-		// 		this.logger.warn('re-queueing item %s', task.IPFShash);
-		// 		this.pinnerQueue.push(task);
-		// 	})
-		// }, 4);
 	}
 
 	setLimit(sizeLimit) {
@@ -58,27 +46,11 @@ class Pinner {
 			this.pinAccounting[address].used.sub(amount);
 	};
 
-	// pin(owner, IPFShash, ttl) {
-	// 	if (!IPFShash || IPFShash.length == 0) {
-	// 		this.logger.info('no IPFS hash given');
-	// 		return;
-	// 	}
-	// 	this.logger.info('adding %s to queue', IPFShash);
-	// 	this.pinnerQueue.push({
-	// 		owner: owner,
-	// 		IPFShash: IPFShash,
-	// 		ttl: ttl,
-	// 	});
-	// };
-
 	pin(owner, IPFShash, ttl) {
-
-
 		return new Promise((resolve, reject) => {
-
 			if (!IPFShash || IPFShash.length == 0) {
 				this.logger.info('no IPFS hash given');
-				return reject();
+				return reject(new Error('no IPFS hash given'));
 			}
 
 			owner = this.cleanAddress(owner);
@@ -105,14 +77,15 @@ class Pinner {
 						return resolve();
 					}).catch((err) => {
 						this.logger.error('Error pinning hash %s', err.message);
-						return reject();
+						return reject(err);
 					});
 				} else {
 					this.logger.error('Pinning hash %s would exceed users %s quota => ignoring', IPFShash, owner);
+					return reject(new Error('Pinning this hash would exceed users quota'));
 				}
 			}).catch((err) => {
 				this.logger.error(err.message);
-				return reject();
+				return reject(err);
 			});
 		});
 	}
@@ -148,10 +121,7 @@ class Pinner {
 	getAccountingStats() {
 		return {
 			pinAccounting: this.pinAccounting,
-			hashExpiry: this.hashExpiry,
 			count: this.count,
-			//queue: this.pinnerQueue.length(),
-			//processing: this.currentProcess,
 		};
 	}
 
