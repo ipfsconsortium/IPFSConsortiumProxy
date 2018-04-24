@@ -1,6 +1,6 @@
 {
   "name": "ipfsconsortiumproxy",
-  "version": "0.0.3",
+  "version": "0.0.2",
   "description": "IPFS consortium deamon scripts wrapped as an npm module",
   "main": "index.js",
   "scripts": {
@@ -23,18 +23,22 @@
   },
   "homepage": "https://github.com/ipfsconsortium/IPFSConsortiumProxy#readme",
   "dependencies": {
+    "abi-decoder": "^1.1.0",
+    "async": "^2.6.0",
+    "bluebird": "^3.5.1",
+    "bn.js": "^4.11.8",
     "command-line-tool": "^0.8.0",
     "dotenv": "^5.0.1",
-    "ipfs-api": "^18.2.0",
-    "ipfsconsortiumcontracts": "^0.0.2",
+    "ipfs-api": "^20.0.1",
+    "ipfsconsortiumcontracts": "^0.0.5",
     "level": "^3.0.0",
-    "web3": "^1.0.0-beta2",
-    "winston": "^3.0.0-rc3"
+    "web3": "^1.0.0-beta.30",
+    "winston": "^3.0.0-rc1"
   },
   "devDependencies": {
-    "eslint": "^4.19.0",
+    "eslint": "^4.19.1",
     "eslint-config-google": "^0.9.1",
-    "mocha": "^5.0.4",
+    "mocha": "^5.1.1",
     "nyc": "^11.6.0"
   },
   "bin": {
