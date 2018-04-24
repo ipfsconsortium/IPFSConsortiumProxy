@@ -2,10 +2,8 @@
 /* eslint no-console: ["error", { allow: ["warn", "error","log"] }] */
 /* eslint max-len: ["error", { "code": 280 }] */
 const queue = require('async/queue');
-const Promise = require("bluebird");
 
 /**
- * Take care of pinning & accounting
  *
  */
 class ThrottledIPFS {
