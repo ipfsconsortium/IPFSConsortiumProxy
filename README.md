@@ -33,8 +33,14 @@ The Ethereum node connects through a websocket on `localhost` port `8546`
 ### Option 3 : command line parameters
 
 ```
-ipfsconsortiumproxy  --ipfsapihost localhost --ipfsapiport 5001 --web3hostws "ws://localhost:8546" --contractaddress '0x7433c7c768be4025ab791fb7b2942c3d9e309f3e' --startblock 4090116
+ipfsconsortiumproxy \
+ --ipfsapihost localhost \
+ --ipfsapiport 5001 \
+ --web3hostws "ws://localhost:8546" \
+ --contractaddress '0xf5758D7450a6E7076d99db583f037B47b5135744' \
+ --startblock 5450081 \
 ```
+
 
 Type `ipfsconsortiumproxy -h` for more info about the available parameters.
 
@@ -47,8 +53,11 @@ just type `ipfsconsortiumproxy` to start it up.
 
 A consortium is managed by a smart contract. A few example consortium contracts are deployed here 
 
-* Livenet `0x7433c7c768be4025ab791fb7b2942c3d9e309f3e` ( startblock 4090116 )
+* Livenet `0xf5758D7450a6E7076d99db583f037B47b5135744 ` ( startblock 5450081 )
 * Rinkeby `0x3ef882ffcE8fC40f6Ca473f29AC16dE8a60419BB` ( startblock 1846107 )
+
+The IPFS Solidity code can be found here :
+https://github.com/ipfsconsortium/IPFSConsortiumContracts/tree/master/contracts
 
 ## How can I create my own consortium ?
 
