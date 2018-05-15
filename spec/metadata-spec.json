@@ -1,0 +1,32 @@
+{
+	"$id": "http://datapinner.com/metadata.json",
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"type": "object",
+	"definitions": {
+		"manifest": {
+			"properties": {
+				"type": {
+					"$id": "/properties/type",
+					"type": "string",
+					"title": "manifest type",
+					"const": "manifest"
+				},
+				"hashes": {
+					"$id": "/properties/hashes",
+					"type": "array",
+					"items": {
+						"$id": "/properties/hashes/items",
+						"type": "string",
+						"minLength": 46,
+						"maxLength": 46,
+						"title": "an IPFS hash"
+					}
+				}
+			}
+		}
+	},
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"anyOf": [{
+		"$ref": "#/definitions/manifest"
+	}]
+}
