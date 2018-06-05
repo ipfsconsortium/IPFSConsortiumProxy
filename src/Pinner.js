@@ -27,7 +27,7 @@ class Pinner {
 	}
 
 	canAddToQuota(address, amount) {
-		if (!this.pinAccounting[address]) {
+		if (!this.pinAccounting[address] || !amount) {
 			return false;
 		}
 		return (this.pinAccounting[address]
@@ -68,10 +68,8 @@ class Pinner {
 					this.throttledIPFS.pin(IPFShash).then((res) => {
 						this.logger.info('pinning complete... %s', JSON.stringify(res));
 						this.addToQuota(owner, hashByteSize);
-						if (ttl > 0) {
+						if (ttl && ttl > 0) {
 							this.hashExpiry[IPFShash] = ttl;
-						} else {
-							this.logger.info('this hash does not expire. Not setting an expiry date.');
 						}
 						this.count++;
 						return resolve();
