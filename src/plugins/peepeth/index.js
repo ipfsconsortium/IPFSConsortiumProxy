@@ -190,6 +190,7 @@ class Peepeth {
 			pinCount: this.pinCount,
 			highestBlock: this.highestBlock,
 			manifest: this.manifestHash,
+			picHashes: this.picHashes.length,
 		});
 	}
 
