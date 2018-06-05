@@ -5,6 +5,17 @@ This *IPFS consortium tool* allows you to jointly host IPFS data in a with a gro
 The Proxy script watches a consortium smart-contract and pins/unpins IPFS data on your local
 IPFS server according to the Events that flow through the contract, and other contracts that can be added by members of the same consortium.
 
+What problems does IPFS Pinning Consortium try to solve ?
+
+- Governance about membership of a consortium for sharing IPFS hashed data
+- An interface to add IPFS hashes to a consortium
+ - a single IPFS hash
+ - a metadata object containing an extendible stuctured format to add hashes ( e.g. a manifest of hashes )
+- A definition of the metadata format (a JSON schema)
+- A client utility to support and automate persisting data ( a.k.a pinning IPFS hashes )
+- Proof of Persistence : status reporting among consortium members
+
+
 # Installation
 
 `npm install ipfsconsortiumproxy`

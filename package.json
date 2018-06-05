@@ -31,6 +31,8 @@
     "dotenv": "^5.0.1",
     "ipfs-api": "^20.0.1",
     "ipfsconsortiumcontracts": "^0.0.5",
+    "ipfsconsortiumdata": "0.0.2",
+    "jsonschema": "^1.2.4",
     "level": "^3.0.0",
     "web3": "^1.0.0-beta.30",
     "winston": "^3.0.0-rc1"
