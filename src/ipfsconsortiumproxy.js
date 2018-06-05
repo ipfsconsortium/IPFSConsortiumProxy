@@ -86,9 +86,8 @@ class IPFSConsortiumProxy {
 		});
 
 		const web3 = new Web3(new Web3.providers.WebsocketProvider(this.options.WEB3HOSTWS));
-		setInterval(function() {
+		setInterval(() => {
 			web3.eth.net.isListening().then().catch((e) => {
-				//console.log('[ - ] Lost connection to the node: '+ WEB3HOSTWS +', reconnecting');
 				web3.setProvider(this.options.WEB3HOSTWS);
 			})
 		}, 10000);
