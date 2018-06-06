@@ -48,24 +48,11 @@ class IPFSConsortiumProxy {
 
 		this.plugins = {
 			'ensreader': new(require('./plugins/ensreader'))(),
-			//'ipfsconsortiumobject': new (require('./plugins/ipfsconsortiumobject'))(),
 		};
 
 		this.logger.info('options %j %s ', this.options, typeof this.options.PLUGINS);
-
-		// // load additional plugins provided on the command line.
-		// if (this.options.PLUGINS) {
-		// 	this.options.PLUGINS.forEach((name) => {
-		// 		this.logger.info('loading plugin %s', name);
-		// 		const plugin = require('./plugins/' + name);
-		// 		this.plugins[name] = new plugin();
-		// 	});
-		// }
-
 		this.logger.info('plugins loaded: %j', Object.keys(this.plugins));
-
 		this.lastblock = 0;
-
 	}
 
 	/**
@@ -83,24 +70,25 @@ class IPFSConsortiumProxy {
 			host: this.options.IPFSAPIHOST,
 			port: this.options.IPFSAPIPORT,
 			protocol: 'http',
+			timeout: 5,
 		});
 
 		const web3 = new Web3(new Web3.providers.WebsocketProvider(this.options.WEB3HOSTWS));
 		setInterval(() => {
 			web3.eth.net.isListening().then().catch((e) => {
 				web3.setProvider(this.options.WEB3HOSTWS);
-			})
+			});
 		}, 10000);
 
 		let throttledIPFS = new ThrottledIPFS({
 			ipfs: ipfs,
-			logger: this.logger
+			logger: this.logger,
 		});
 
 		let pinner = new Pinner({
 			ipfs: ipfs,
 			throttledIPFS: throttledIPFS,
-			logger: this.logger
+			logger: this.logger,
 		});
 
 		let ownershiptracker = new OwnershipTracker();
@@ -119,7 +107,7 @@ class IPFSConsortiumProxy {
 			} else {
 				this.logger.info('no such plugin %s', options.type);
 			}
-		}
+		};
 
 		addWatch({
 			type: 'ensreader',
@@ -150,4 +138,5 @@ class IPFSConsortiumProxy {
 		setInterval(dumpstate, 1000 * 10);
 	}
 }
+
 module.exports = IPFSConsortiumProxy;

@@ -17,7 +17,7 @@ exports.definitions = [{
 	type: Boolean,
 	alias: 'h',
 	description: 'Show usage',
-}, ];
+}];
 
 exports.usageSections = [{
 	header: 'ipfsconsortiumproxy',
@@ -28,4 +28,4 @@ exports.usageSections = [{
 }, {
 	header: 'Options',
 	optionList: exports.definitions,
-}, ];
+}];
