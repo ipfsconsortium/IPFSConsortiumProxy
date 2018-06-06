@@ -1,5 +1,6 @@
 const ensconfig = require('../../../ensconfig.json');
 const ens = require('./ens');
+const schemavalidator = require('ipfsconsortiumdata');
 
 /**
  * Class for ens reader.
@@ -30,10 +31,17 @@ class ENSReader {
 				options.pinner.pin(owner, toIPFSHash(content));
 				options.throttledIPFS.cat(toIPFSHash(content)).then((file) => {
 					const s = JSON.parse(file.toString());
-					options.pinner.setLimit(new options.web3.utils.BN(s.quota));
-					s.pin.forEach((pinItem) => {
-						options.pinner.pin(owner, toIPFSHash(pinItem));
-					});
+					schemavalidator.validate(s).then(() => {
+							options.pinner.setLimit(new options.web3.utils.BN(s.quota));
+							s.pin.forEach((pinItem) => {
+								options.pinner.pin(owner, toIPFSHash(pinItem));
+							});
+						})
+						.catch((e) => {
+							options.logger.error('The ENS data is invalid %j', e);
+						});
+				}).catch((e) => {
+					options.logger.error('Cannot read IPFS data %j', e);
 				});
 			});
 		});
