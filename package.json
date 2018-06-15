@@ -6,7 +6,8 @@
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 0",
 		"lint": "eslint .",
-		"start": "./bin.js"
+		"start": "./bin.js",
+		"semantic-release": "semantic-release"
 	},
 	"repository": {
 		"type": "git",
