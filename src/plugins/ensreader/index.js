@@ -1,6 +1,6 @@
 const ensconfig = require('../../../ensconfig.json');
 const ens = require('./ens');
-const schemavalidator = require('ipfsconsortiumdata');
+const ipfsconsortiumdata = require('ipfsconsortiumdata');
 
 /**
  * Class for ens reader.
@@ -28,11 +28,14 @@ class ENSReader {
 				options.logger.info('ENS %s resolved to %j', item, content);
 				options.logger.info('ENS %s owner is %j', item, owner);
 
-				options.pinner.pin(owner, toIPFSHash(content));
 				options.throttledIPFS.cat(toIPFSHash(content)).then((file) => {
-					const s = JSON.parse(file.toString());
-					schemavalidator.validate(s).then(() => {
-							options.pinner.setLimit(new options.web3.utils.BN(s.quota));
+					const s = JSON.parse(file.toString('utf-8'));
+					options.logger.info('file %j',s); 
+					debugger;
+					ipfsconsortiumdata.validate(s)
+						.then(() => {
+							options.pinner.setLimit(new options.web3.utils.BN(s.quotum));
+							options.pinner.pin(owner, toIPFSHash(content));
 							s.pin.forEach((pinItem) => {
 								options.pinner.pin(owner, toIPFSHash(pinItem));
 							});
@@ -41,8 +44,10 @@ class ENSReader {
 							options.logger.error('The ENS data is invalid %j', e);
 						});
 				}).catch((e) => {
-					options.logger.error('Cannot read IPFS data %j', e);
+					options.logger.error('Cannot read IPFS data %s', e);
 				});
+			}).catch((e) => {
+				options.logger.error('Failed to resolve %s: %s', item, e);
 			});
 		});
 	}
