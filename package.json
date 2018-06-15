@@ -24,25 +24,26 @@
 	"homepage": "https://github.com/ipfsconsortium/IPFSConsortiumProxy#readme",
 	"dependencies": {
 		"abi-decoder": "^1.1.0",
-		"async": "^2.6.0",
+		"async": "^2.6.1",
 		"bluebird": "^3.5.1",
 		"bn.js": "^4.11.8",
 		"command-line-tool": "^0.8.0",
-		"dotenv": "^5.0.1",
+		"dotenv": "^6.0.0",
 		"ethereum-ens": "git+https://github.com/ensdomains/ensjs.git",
 		"ipfs-api": "git+https://github.com/sponnet/js-ipfs-api.git",
 		"ipfsconsortiumcontracts": "^0.0.5",
-		"ipfsconsortiumdata": "0.0.2",
+		"ipfsconsortiumdata": "^0.1.1",
 		"jsonschema": "^1.2.4",
-		"level": "^3.0.0",
-		"web3": "^1.0.0-beta.30",
-		"winston": "^3.0.0-rc1"
+		"level": "^4.0.0",
+		"web3": "^1.0.0-beta.34",
+		"winston": "^3.0.0"
 	},
 	"devDependencies": {
 		"eslint": "^4.19.1",
 		"eslint-config-google": "^0.9.1",
-		"mocha": "^5.1.1",
-		"nyc": "^11.6.0"
+		"mocha": "^5.2.0",
+		"nyc": "^12.0.2",
+		"semantic-release": "^15.5.2"
 	},
 	"bin": {
 		"ipfsconsortiumproxy": "bin.js"
