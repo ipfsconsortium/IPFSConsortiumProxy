@@ -38,16 +38,11 @@ class IPFSConsortiumProxyCli {
 			IPFSAPIHOST: options.ipfsapihost || process.env.IPFSAPIHOST,
 			IPFSAPIPORT: options.ipfsapiport || process.env.IPFSAPIPORT,
 			WEB3HOSTWS: options.web3hostws || process.env.WEB3HOSTWS,
-			CONTRACTADDRESS: options.contractaddress || process.env.CONTRACTADDRESS,
-			STARTBLOCK: options.startblock || process.env.STARTBLOCK,
-			PLUGINS: options.plugins,
 		};
 
 		if (!proxyOptions.IPFSAPIHOST ||
 			!proxyOptions.IPFSAPIPORT ||
-			!proxyOptions.WEB3HOSTWS ||
-			!proxyOptions.CONTRACTADDRESS ||
-			!proxyOptions.STARTBLOCK
+			!proxyOptions.WEB3HOSTWS
 		) {
 			options.help = true;
 		}

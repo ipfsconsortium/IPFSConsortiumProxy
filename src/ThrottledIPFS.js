@@ -7,7 +7,11 @@ const queue = require('async/queue');
  *
  */
 class ThrottledIPFS {
-
+	/**
+	 * Constructs the object.
+	 *
+	 * @param      {Object}  options  The options logger/ipfs
+	 */
 	constructor(options) {
 		this.logger = options.logger;
 		this.ipfs = options.ipfs;
@@ -35,6 +39,12 @@ class ThrottledIPFS {
 		}, 5);
 	}
 
+	/**
+	 * IPFS cat
+	 *
+	 * @param      {String}   hash    The ipfs hash
+	 * @return     {Promise}  { resolves with the IPFS api data }
+	 */
 	cat(hash) {
 		return new Promise((resolve, reject) => {
 			this.catQ.push(hash, (err, r) => {
@@ -47,6 +57,12 @@ class ThrottledIPFS {
 		});
 	}
 
+	/**
+	 * IPFS pin
+	 *
+	 * @param      {String}   hash    The ipfs hash
+	 * @return     {Promise}  { resolves with the IPFS api data }
+	 */
 	pin(hash) {
 		return new Promise((resolve, reject) => {
 			this.pinQ.push(hash, (err, r) => {
@@ -59,6 +75,11 @@ class ThrottledIPFS {
 		});
 	}
 
+	/**
+	 * Returns statistics like queue lengths / concurrent connections / etc.
+	 *
+	 * @return     {Object}  The statistics - ready to print out.
+	 */
 	getStats() {
 		return {
 			catqueuelength: this.catQ.length(),
