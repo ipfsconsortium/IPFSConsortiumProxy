@@ -6,11 +6,8 @@ The IPFS consortium is configured by an array of participants in the consortium 
 
 What problems does IPFS Pinning Consortium try to solve ?
 
-- Governance about membership of a consortium for sharing IPFS hashed data
-- An interface to add IPFS hashes to a consortium
- - a single IPFS hash
- - a metadata object containing an extendible stuctured format to add hashes ( e.g. a manifest of hashes )
-- A definition of the metadata format (a JSON schema)
+- A structured metadata format to describe `consortium` details and `manifest` files of IPFS hashes.
+- A formal description of the metadata format (a JSON schema)
 - A client utility to support and automate persisting data ( a.k.a pinning IPFS hashes )
 - Proof of Persistence (TODO) : status reporting among consortium members
 
