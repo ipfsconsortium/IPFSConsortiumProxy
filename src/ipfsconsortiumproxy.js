@@ -70,10 +70,12 @@ class IPFSConsortiumProxy {
 			host: this.options.IPFSAPIHOST,
 			port: this.options.IPFSAPIPORT,
 			protocol: 'http',
-			timeout: 5,
+			timeout: 1000 * 60,
 		});
 
 		const web3 = new Web3(new Web3.providers.WebsocketProvider(this.options.WEB3HOSTWS));
+
+		// check connectivity to Web3 socket, reconnect if neccesary
 		setInterval(() => {
 			web3.eth.net.isListening().then().catch((e) => {
 				web3.setProvider(this.options.WEB3HOSTWS);

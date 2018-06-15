@@ -16,7 +16,8 @@ class Pinner {
 	 */
 	constructor(options) {
 		this.count = 0;
-		this.pinLimit = options.pinLimit;
+
+		this.sizeLimit = options.sizeLimit || new BN(1000000);
 		this.logger = options.logger;
 		this.ipfs = options.ipfs;
 		this.throttledIPFS = options.throttledIPFS;
