@@ -33,7 +33,7 @@
 		"ethereum-ens": "git+https://github.com/ensdomains/ensjs.git",
 		"ipfs-api": "git+https://github.com/sponnet/js-ipfs-api.git",
 		"ipfsconsortiumcontracts": "^0.0.5",
-		"ipfsconsortiumdata": "^0.1.1",
+		"ipfsconsortiumdata": "^0.1.3",
 		"jsonschema": "^1.2.4",
 		"level": "^4.0.0",
 		"web3": "^1.0.0-beta.34",
@@ -44,7 +44,7 @@
 		"eslint-config-google": "^0.9.1",
 		"mocha": "^5.2.0",
 		"nyc": "^12.0.2",
-		"semantic-release": "^15.5.2"
+		"semantic-release": "^15.5.3"
 	},
 	"bin": {
 		"ipfsconsortiumproxy": "bin.js"
