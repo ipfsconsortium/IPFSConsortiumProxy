@@ -2,6 +2,7 @@
 /* eslint no-console: ["error", { allow: ["warn", "error","log"] }] */
 /* eslint max-len: ["error", { "code": 280 }] */
 const queue = require('async/queue');
+const logger = require('./logs')(module);
 
 /**
  *
@@ -13,7 +14,6 @@ class ThrottledIPFS {
 	 * @param      {Object}  options  The options logger/ipfs
 	 */
 	constructor(options) {
-		this.logger = options.logger;
 		this.ipfs = options.ipfs;
 		this.counters = {
 			cat: 0,
@@ -53,7 +53,7 @@ class ThrottledIPFS {
 				}
 				return resolve(r);
 			});
-			this.logger.info('ThrottledIPFS : cat queue %d running - length %d', this.catQ.running(), this.catQ.length());
+			this.quickstats();
 		});
 	}
 
@@ -71,8 +71,12 @@ class ThrottledIPFS {
 				}
 				return resolve(r);
 			});
-			this.logger.info('ThrottledIPFS : pin queue %d running - length %d', this.pinQ.running(), this.pinQ.length());
+			this.quickstats();
 		});
+	}
+
+	quickstats() {
+		logger.info('queues : pin: %d ; cat: %d', this.pinQ.running() + this.pinQ.length(), this.catQ.running() + this.catQ.length())
 	}
 
 	/**

@@ -2,7 +2,7 @@
 /* eslint no-console: ["error", { allow: ["warn", "error","log"] }] */
 /* eslint max-len: ["error", { "code": 280 }] */
 const BN = require('bn.js');
-// const Promise = require("bluebird");
+const logger = require('./logs')(module);
 
 /**
  * Take care of pinning & accounting
@@ -14,110 +14,89 @@ class Pinner {
 	 *
 	 * @param      {Object}  options  The options
 	 */
-	constructor(options) {
+	constructor(owner,limit,ipfs) {
 		this.count = 0;
-
-		this.sizeLimit = options.sizeLimit || new BN(1000000);
-		this.logger = options.logger;
-		this.ipfs = options.ipfs;
-		this.throttledIPFS = options.throttledIPFS;
-		this.pinAccounting = {};
-		this.hashExpiry = {};
+		this.owner = owner;
+		this.limit = limit || new BN(0);
+		this.usage = new BN(0);
+		this.ipfs = ipfs;	
 	}
 
 	/**
 	 * Sets the limit that you can pin at most
 	 *
-	 * @param      {BigNumber}  sizeLimit  The size limit
+	 * @param      {BigNumber}  limit  The size limit
 	 */
-	setLimit(sizeLimit) {
-		this.logger.info('setting sizeLimit to %j', sizeLimit);
-		this.sizeLimit = sizeLimit;
+	setLimit(limit) {
+		logger.info('setting limit to %j', limit);
+		this.limit = limit;
 	}
 
 	/**
 	 * Determines ability to add to quota.
 	 *
-	 * @param      {String}   address  The address
 	 * @param      {BN}   amount   The amount that you want to add
 	 * @return     {boolean}  True if able to add to quota, False otherwise.
 	 */
-	canAddToQuota(address, amount) {
-		if (!this.pinAccounting[address] || !amount) {
+	canAddToQuota(amount) {
+		if (!amount) {
 			return false;
 		}
-		return (this.pinAccounting[address]
-			.used.add(amount).cmp(this.sizeLimit) === -1);
+		return (this.usage.add(amount).cmp(this.limit) === -1);
 	}
 
 	/**
 	 * Adds to quota.
 	 *
-	 * @param      {String}  address  The address
 	 * @param      {BN}  amount   The amount to add
 	 */
-	addToQuota(address, amount) {
-		this.pinAccounting[address].used =
-			this.pinAccounting[address].used.add(amount);
-		this.pinAccounting[address].usedPercent = this.pinAccounting[address].used.mul(new BN(100)).div(this.sizeLimit);
+	addToQuota(amount) {
+		this.usage = this.usage.add(amount);
+		this.usagePercent = this.usage.mul(new BN(100)).div(this.limit);
 	}
 
 	/**
 	 * Subtract from quota
 	 *
-	 * @param      {String}  address  The address
 	 * @param      {BN}  amount   The amount to add
 	 */
-	subFromQuota(address, amount) {
-		this.pinAccounting[address].used =
-			this.pinAccounting[address].used.sub(amount);
+	subFromQuota(amount) {
+		this.usage = this.usage.sub(amount);
 	}
 
 	/**
 	 * pin content
 	 *
-	 * @param      {string}   owner     The owner pubkey
 	 * @param      {string}   IPFShash  The ipfs hash
-	 * @param      {number}   ttl       The ttl
 	 * @return     {Promise}  {resolves when pinned}
 	 */
-	pin(owner, IPFShash, ttl) {
+	pin(IPFShash) {
+		debugger;
 		return new Promise((resolve, reject) => {
 			if (!IPFShash || IPFShash.length == 0) {
-				this.logger.info('no IPFS hash given');
+				logger.info('no IPFS hash given');
 				return reject(new Error('no IPFS hash given'));
 			}
 
-			owner = this.cleanAddress(owner);
-			if (!this.pinAccounting[owner]) {
-				this.pinAccounting[owner] = {
-					used: new BN(0),
-				};
-			}
-			this.logger.info('pinning %s for owner %s', IPFShash, owner);
-
-			this.throttledIPFS.cat(IPFShash).then((r) => {
-				this.logger.info('hash %s fetched %d bytes', IPFShash, r.byteLength);
+			this.ipfs.cat(IPFShash).then((r) => {
+				logger.info('hash %s fetched %d bytes', IPFShash, r.byteLength);
 				let hashByteSize = new BN(r.byteLength);
-				if (this.canAddToQuota(owner, hashByteSize)) {
-					this.throttledIPFS.pin(IPFShash).then((res) => {
-						this.logger.info('pinning complete... %s', JSON.stringify(res));
-						this.addToQuota(owner, hashByteSize);
-						if (ttl && ttl > 0) {
-							this.hashExpiry[IPFShash] = ttl;
-						}
+				if (this.canAddToQuota(hashByteSize)) {
+					this.ipfs.pin(IPFShash).then((res) => {
+						logger.info('pinning complete... %s', JSON.stringify(res));
+						this.addToQuota(hashByteSize);
 						this.count++;
 						return resolve();
 					}).catch((err) => {
-						this.logger.error('Error pinning hash %s', err.message);
+						logger.error('Error pinning hash %s', err.message);
 						return reject(err);
 					});
 				} else {
-					this.logger.error('Pinning hash %s would exceed users %s quota => ignoring', IPFShash, owner);
+					//logger.error('Pinning hash %s would exceed users %s quota => ignoring', IPFShash, owner);
 					return reject(new Error('Pinning this hash would exceed users quota'));
 				}
 			}).catch((err) => {
-				this.logger.error(err.message);
+				logger.error(err.message);
 				return reject(err);
 			});
 		});
@@ -126,24 +105,18 @@ class Pinner {
 	/**
 	 * unpin content + remove from quota
 	 *
-	 * @param      {string}   owner     The owner
 	 * @param      {string}   IPFShash  The ipf shash
 	 * @return     {Promise}  { description_of_the_return_value }
 	 */
-	unpin(owner, IPFShash) {
+	unpin(IPFShash) {
 		return new Promise((resolve, reject) => {
-			if (!this.pinAccounting[owner] || !this.pinAccounting[owner][IPFShash]) {
-				return resolve();
-			}
 			this.ipfs.pin.rm(IPFShash, (err, res) => {
 				if (err && err.code === 0) {
-					this.logger.warn('already unpinned hash %s', IPFShash);
+					logger.warn('already unpinned hash %s', IPFShash);
 					this.count--;
 					return resolve();
 				} else {
-					delete this.hashExpiry[IPFShash];
-					delete this.pinAccounting[owner][IPFShash];
-					this.logger.info('unpinned hash %s', IPFShash, res);
+					logger.info('unpinned hash %s', IPFShash, res);
 					return resolve();
 				}
 			});
@@ -166,12 +139,8 @@ class Pinner {
 	 * @param      {Function}  owner   The owner
 	 * @return     {BN}        The usage.
 	 */
-	getUsage(owner) {
-		owner = this.cleanAddress(owner);
-		if (!this.pinAccounting[owner]) {
-			return new BN(0);
-		}
-		return this.pinAccounting[owner].used;
+	getUsage() {
+		return this.usage;
 	}
 	/**
 	 * Gets the accounting statistics.
@@ -180,8 +149,7 @@ class Pinner {
 	 */
 	getAccountingStats() {
 		return {
-			pinAccounting: this.pinAccounting,
-			count: this.count,
+			usage: this.usage.toString(),
 		};
 	}
 }

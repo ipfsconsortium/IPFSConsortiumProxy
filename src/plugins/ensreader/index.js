@@ -1,6 +1,8 @@
-const ensconfig = require('../../../ensconfig.json');
+const consortium = require('../../../consortium.json');
 const ens = require('./ens');
 const ipfsconsortiumdata = require('ipfsconsortiumdata');
+const logger = require('../../logs')(module);
+const Pinner = require('../../Pinner');
 
 /**
  * Class for ens reader.
@@ -8,6 +10,9 @@ const ipfsconsortiumdata = require('ipfsconsortiumdata');
  * @class      ENSReader
  */
 class ENSReader {
+	constructor() {
+		this.pinners = [];
+	}
 	/**
 	 * Adds a watch to the ENS config
 	 *
@@ -21,33 +26,40 @@ class ENSReader {
 			return input.replace('/ipfs/', '');
 		};
 
-		options.logger.info('ENS reader started');
-		ensconfig.forEach((item) => {
-			options.logger.info('ENS entry found in config : %s', item);
-			ens.getContent(options.web3, item, 'consortiumManifest').then(([content, owner]) => {
-				options.logger.info('ENS %s resolved to %j', item, content);
-				options.logger.info('ENS %s owner is %j', item, owner);
+		logger.info('ENS reader started');
+		consortium.members.forEach((item) => {
+			logger.info('New member => ENS entry found in config : %s', item.ensname);
+			let pinner = new Pinner(item.ensname,new options.web3.utils.BN(item.quotum),options.throttledIPFS);
+			// {
+			// 	name: item.ensname,
+			// 	ipfs: options.ipfs,
+			// 	throttledIPFS: options.throttledIPFS,
+			// });
+			this.pinners.push(pinner);
+			pinner.setLimit(new options.web3.utils.BN(item.quotum));
+			ens.getContent(options.web3, item.ensname, 'consortiumManifest').then(([content, owner]) => {
+				logger.info('ENS %s resolved to %j', item.ensname, content);
 
 				options.throttledIPFS.cat(toIPFSHash(content)).then((file) => {
-					const s = JSON.parse(file.toString('utf-8'));
-					options.logger.info('file %j',s); 
-					debugger;
+					const s = JSON.parse(file.toString());
+					logger.info('file %j', s);
+
 					ipfsconsortiumdata.validate(s)
 						.then(() => {
-							options.pinner.setLimit(new options.web3.utils.BN(s.quotum));
-							options.pinner.pin(owner, toIPFSHash(content));
+							//options.pinner.setLimit(new options.web3.utils.BN(s.quotum));
+							pinner.pin(toIPFSHash(content));
 							s.pin.forEach((pinItem) => {
-								options.pinner.pin(owner, toIPFSHash(pinItem));
+								pinner.pin(toIPFSHash(pinItem));
 							});
 						})
 						.catch((e) => {
-							options.logger.error('The ENS data is invalid %j', e);
+							logger.error('The ENS data is invalid %j', e);
 						});
 				}).catch((e) => {
-					options.logger.error('Cannot read IPFS data %s', e);
+					logger.error('Cannot read IPFS data %s', e);
 				});
 			}).catch((e) => {
-				options.logger.error('Failed to resolve %s: %s', item, e);
+				logger.error('Failed to resolve %s: %s', item.ensname, e);
 			});
 		});
 	}
@@ -58,7 +70,12 @@ class ENSReader {
 	 * @return     {String}  The statistics.
 	 */
 	getStats() {
-		return ({});
+		return ([this.pinners.map((pinner) => {
+			return ({
+				name: pinner.name,
+				usage: pinner.getUsage.toNumber(10),
+			});
+		})]);
 	}
 }
 
