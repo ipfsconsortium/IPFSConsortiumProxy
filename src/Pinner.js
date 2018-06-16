@@ -147,9 +147,11 @@ class Pinner {
 	 *
 	 * @return     {Object}  The accounting statistics.
 	 */
-	getAccountingStats() {
+	getStats() {
 		return {
+			limit: this.limit.toString(),
 			usage: this.usage.toString(),
+			pct: this.limit.isZero() ? 0 : this.usage.mul(new BN(100)).div(this.limit),
 		};
 	}
 }

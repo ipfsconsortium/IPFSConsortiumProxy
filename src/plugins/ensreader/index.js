@@ -29,14 +29,10 @@ class ENSReader {
 		logger.info('ENS reader started');
 		consortium.members.forEach((item) => {
 			logger.info('New member => ENS entry found in config : %s', item.ensname);
-			let pinner = new Pinner(item.ensname,new options.web3.utils.BN(item.quotum),options.throttledIPFS);
-			// {
-			// 	name: item.ensname,
-			// 	ipfs: options.ipfs,
-			// 	throttledIPFS: options.throttledIPFS,
-			// });
+			let pinner = new Pinner(item.ensname,
+				new options.web3.utils.BN(item.quotum), options.throttledIPFS);
+			
 			this.pinners.push(pinner);
-			pinner.setLimit(new options.web3.utils.BN(item.quotum));
 			ens.getContent(options.web3, item.ensname, 'consortiumManifest').then(([content, owner]) => {
 				logger.info('ENS %s resolved to %j', item.ensname, content);
 
@@ -46,7 +42,6 @@ class ENSReader {
 
 					ipfsconsortiumdata.validate(s)
 						.then(() => {
-							//options.pinner.setLimit(new options.web3.utils.BN(s.quotum));
 							pinner.pin(toIPFSHash(content));
 							s.pin.forEach((pinItem) => {
 								pinner.pin(toIPFSHash(pinItem));
@@ -70,12 +65,7 @@ class ENSReader {
 	 * @return     {String}  The statistics.
 	 */
 	getStats() {
-		return ([this.pinners.map((pinner) => {
-			return ({
-				name: pinner.name,
-				usage: pinner.getUsage.toNumber(10),
-			});
-		})]);
+		return (this.pinners.map((pinner) => pinner.getStats()));
 	}
 }
 
