@@ -1,3 +1,5 @@
+sudo: required
+
 language: node_js
 
 cache:
@@ -7,8 +9,18 @@ cache:
 node_js:
   - '9'
 
+services:
+  - docker
+
 before_install:
   - echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > ~/.npmrc
+
+install:
+  - apt-get update
+  - apt-get install golang-go -y
+  - wget https://dist.ipfs.io/go-ipfs/v0.4.10/go-ipfs_v0.4.10_linux-386.tar.gz
+  - tar xvfz go-ipfs_v0.4.10_linux-386.tar.gz
+  - echo 'hello' | ./go-ipfs/ipfs add --api /ip4/`dig +short ${IPFS_HOSTNAME}`/tcp/5001/http
 
 deploy:
   provider: script
