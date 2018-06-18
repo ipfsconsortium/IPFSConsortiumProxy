@@ -108,7 +108,7 @@ class IPFSConsortiumProxy {
 				});
 		};
 
-		setInterval(dumpstate, 1000 * 2);
+		setInterval(dumpstate, 1000 * 10);
 	}
 }
 
