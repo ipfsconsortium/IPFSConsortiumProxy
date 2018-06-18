@@ -20,17 +20,28 @@ class ThrottledIPFS {
 			pin: 0,
 		};
 
-		this.catQ = queue((IPFShash, callback) => {
-			this.ipfs.cat(IPFShash).then((r) => {
+		this.catQ = queue((IPFSThrottledRequest, callback) => {
+			this.ipfs.cat(IPFSThrottledRequest.hash).then((r) => {
 				this.counters.cat++;
 				callback(null, r);
 			}).catch((e) => {
-				callback(e);
+				// total delay = n*10e3/3 + n*10e2/2 + n/6 
+				if (IPFSThrottledRequest.attempt > 15) {
+					return callback(new Error('IPFS timeout - giving up after ' + IPFSThrottledRequest.attempt + ' attempts'));
+				}
+				const rescheduleDelay = IPFSThrottledRequest.attempt ** 2;
+				logger.info('IPFS cat error. Rescheduling %s attempt %d in %d s', IPFSThrottledRequest.hash, IPFSThrottledRequest.attempt + 1, rescheduleDelay);
+				setTimeout(() => {
+					this.catQ.push({
+						hash: IPFSThrottledRequest.hash,
+						attempt: IPFSThrottledRequest.attempt + 1
+					})
+				}, rescheduleDelay * 1000)
 			});
 		}, 5);
 
-		this.pinQ = queue((IPFShash, callback) => {
-			this.ipfs.pin.add(IPFShash).then((r) => {
+		this.pinQ = queue((IPFSThrottledRequest, callback) => {
+			this.ipfs.pin.add(IPFSThrottledRequest.hash).then((r) => {
 				this.counters.pin++;
 				callback(null, r);
 			}).catch((e) => {
@@ -47,7 +58,10 @@ class ThrottledIPFS {
 	 */
 	cat(hash) {
 		return new Promise((resolve, reject) => {
-			this.catQ.push(hash, (err, r) => {
+			this.catQ.push({
+				hash: hash,
+				attempt: 1
+			}, (err, r) => {
 				if (err) {
 					return reject(err);
 				}
@@ -65,7 +79,10 @@ class ThrottledIPFS {
 	 */
 	pin(hash) {
 		return new Promise((resolve, reject) => {
-			this.pinQ.push(hash, (err, r) => {
+			this.pinQ.push({
+				hash: hash,
+				attempt: 1
+			}, (err, r) => {
 				if (err) {
 					return reject(err);
 				}
